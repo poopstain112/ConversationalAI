@@ -220,8 +220,12 @@ app.get('/', (req, res) => {
     </div>
     <div class="chat-container">
         <div class="messages" id="messages">
-            <div class="message assistant">
+            <div class="message assistant" id="msg_initial" data-message="Hello Commander! I am Valor, your advanced AI assistant. I'm now live and ready to assist you with perfect conversation memory, document analysis, and image processing. How can I help you today?">
                 <strong>Valor:</strong> Hello Commander! I am Valor, your advanced AI assistant. I'm now live and ready to assist you with perfect conversation memory, document analysis, and image processing. How can I help you today?
+                <div class="message-actions">
+                    <button class="copy-btn" onclick="copyText('msg_initial')">Copy</button>
+                    <button class="speak-btn" onclick="speakMessage('msg_initial')">🔊 Speak</button>
+                </div>
             </div>
         </div>
         <div class="input-area">
@@ -501,7 +505,7 @@ app.get('/', (req, res) => {
         
         function clearConversation() {
             const messages = document.getElementById('messages');
-            messages.innerHTML = '<div class="message assistant"><strong>Valor:</strong> Conversation cleared. How can I assist you?</div>';
+            messages.innerHTML = '<div class="message assistant" id="msg_cleared" data-message="Conversation cleared. How can I assist you?"><strong>Valor:</strong> Conversation cleared. How can I assist you?<div class="message-actions"><button class="copy-btn" onclick="copyText(\'msg_cleared\')">Copy</button><button class="speak-btn" onclick="speakMessage(\'msg_cleared\')">🔊 Speak</button></div></div>';
             toggleMenu();
             
             fetch('/api/conversation/default/clear', { method: 'POST' });
