@@ -53,19 +53,21 @@ app.get('/', (req, res) => {
     <title>Valor AI - Your Advanced Assistant</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
+        html, body { 
+            height: 100%; overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        body { 
             background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-            color: #fff; height: 100vh; display: flex; flex-direction: column;
-            overflow: hidden;
+            color: #fff; display: flex; flex-direction: column;
         }
         .header { 
             background: rgba(255,255,255,0.08); 
-            padding: 1rem; display: flex; justify-content: space-between; align-items: center;
+            padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px); flex-shrink: 0;
         }
-        .header h1 { font-size: 1.5rem; font-weight: 600; }
+        .header h1 { font-size: 1.2rem; font-weight: 600; }
         .nav-menu { position: relative; }
         .menu-button { 
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
@@ -88,20 +90,20 @@ app.get('/', (req, res) => {
         .dropdown-item:last-child { border-bottom: none; }
         .chat-container { 
             flex: 1; display: flex; flex-direction: column; 
-            max-width: 900px; margin: 0 auto; width: 100%; 
-            padding: 0 1rem; height: calc(100vh - 80px);
+            width: 100%; min-height: 0;
         }
         .messages { 
-            flex: 1; overflow-y: auto; padding: 1rem 0; 
+            flex: 1; overflow-y: auto; padding: 1rem; 
             scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;
+            min-height: 0;
         }
         .messages::-webkit-scrollbar { width: 6px; }
         .messages::-webkit-scrollbar-track { background: transparent; }
         .messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
         .message { 
-            margin: 1rem 0; padding: 1rem 1.5rem; border-radius: 15px; 
-            max-width: 85%; word-wrap: break-word; line-height: 1.5;
-            animation: fadeIn 0.3s ease-in;
+            margin: 0.5rem 0; padding: 1rem 1.5rem; border-radius: 18px; 
+            max-width: 80%; word-wrap: break-word; line-height: 1.4;
+            animation: fadeIn 0.3s ease-in; position: relative;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .user { 
@@ -119,7 +121,8 @@ app.get('/', (req, res) => {
             display: flex; gap: 1rem; padding: 1rem; 
             background: rgba(255,255,255,0.05);
             border-top: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px); flex-shrink: 0;
+            position: sticky; bottom: 0;
         }
         .input-area input { 
             flex: 1; padding: 1rem 1.5rem; border-radius: 25px; 
@@ -159,12 +162,14 @@ app.get('/', (req, res) => {
         }
         .voice-button.speaking { background: rgba(255, 0, 0, 0.3); }
         .message-actions { 
-            margin-top: 0.3rem; display: flex; gap: 0.3rem; align-items: center;
-            float: right;
+            position: absolute; top: 0.5rem; right: 0.5rem; 
+            display: flex; gap: 0.25rem; opacity: 0; transition: opacity 0.2s ease;
         }
+        .message:hover .message-actions { opacity: 1; }
         .copy-btn, .speak-btn { 
-            background: none; border: none; color: rgba(255,255,255,0.6); 
-            cursor: pointer; font-size: 0.8rem; padding: 0.2rem;
+            background: rgba(0,0,0,0.7); border: none; color: #fff;
+            cursor: pointer; font-size: 0.7rem; padding: 0.2rem; border-radius: 4px;
+            width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
             transition: all 0.2s ease; border-radius: 3px;
         }
         .copy-btn:hover, .speak-btn:hover { 
@@ -196,11 +201,19 @@ app.get('/', (req, res) => {
             color: #fff; cursor: pointer; font-weight: 600;
         }
         @media (max-width: 768px) {
-            .chat-container { padding: 0 0.5rem; }
-            .message { max-width: 95%; padding: 1rem; }
-            .input-area { gap: 0.5rem; padding: 0.5rem; }
-            .input-area input { padding: 0.8rem 1rem; }
-            .input-area button { padding: 0.8rem 1.5rem; }
+            .header { padding: 0.5rem 1rem; }
+            .header h1 { font-size: 1.1rem; }
+            .chat-container { height: 100vh; height: 100dvh; }
+            .message { max-width: 95%; margin: 0.25rem 0; padding: 0.75rem 1rem; }
+            .input-area { 
+                position: fixed; bottom: 0; left: 0; right: 0; 
+                z-index: 100; backdrop-filter: blur(20px);
+                gap: 0.5rem; padding: 0.75rem;
+            }
+            .input-area input { padding: 0.75rem 1rem; font-size: 1rem; }
+            .input-area button { padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+            .file-button, .camera-button, .voice-button { padding: 0.75rem; font-size: 1rem; }
+            .messages { padding: 0.75rem; padding-bottom: 80px; }
         }
     </style>
 </head>
