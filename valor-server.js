@@ -61,11 +61,31 @@ app.get('/', (req, res) => {
         }
         .header { 
             background: rgba(255,255,255,0.08); 
-            padding: 1rem; text-align: center; 
+            padding: 1rem; display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
         }
         .header h1 { font-size: 1.5rem; font-weight: 600; }
+        .nav-menu { position: relative; }
+        .menu-button { 
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .menu-button:hover { background: rgba(255,255,255,0.2); }
+        .dropdown { 
+            position: absolute; top: 100%; right: 0; margin-top: 0.5rem;
+            background: rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; min-width: 200px; display: none; z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .dropdown.show { display: block; }
+        .dropdown-item { 
+            padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; transition: background 0.2s ease;
+        }
+        .dropdown-item:hover { background: rgba(255,255,255,0.1); }
+        .dropdown-item:last-child { border-bottom: none; }
         .chat-container { 
             flex: 1; display: flex; flex-direction: column; 
             max-width: 900px; margin: 0 auto; width: 100%; 
@@ -147,6 +167,17 @@ app.get('/', (req, res) => {
 <body>
     <div class="header">
         <h1>Valor AI - Your Advanced Assistant</h1>
+        <div class="nav-menu">
+            <button class="menu-button" onclick="toggleMenu()">
+                Menu ▼
+            </button>
+            <div class="dropdown" id="menuDropdown">
+                <div class="dropdown-item" onclick="clearConversation()">Clear Conversation</div>
+                <div class="dropdown-item" onclick="showApiStatus()">API Status</div>
+                <div class="dropdown-item" onclick="exportConversation()">Export Chat</div>
+                <div class="dropdown-item" onclick="showAbout()">About Valor</div>
+            </div>
+        </div>
     </div>
     <div class="chat-container">
         <div class="messages" id="messages">
@@ -254,6 +285,60 @@ app.get('/', (req, res) => {
                 event.target.value = '';
             }
         }
+        
+        function toggleMenu() {
+            const dropdown = document.getElementById('menuDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        function clearConversation() {
+            const messages = document.getElementById('messages');
+            messages.innerHTML = '<div class="message assistant"><strong>Valor:</strong> Conversation cleared. How can I assist you?</div>';
+            toggleMenu();
+            
+            fetch('/api/conversation/default/clear', { method: 'POST' });
+        }
+        
+        function showApiStatus() {
+            fetch('/api/check-api-key')
+                .then(res => res.json())
+                .then(data => {
+                    const status = data.valid ? 'Connected and operational' : 'Connection issue: ' + data.error;
+                    addMessage('API Status: ' + status, false);
+                });
+            toggleMenu();
+        }
+        
+        function exportConversation() {
+            const messages = document.querySelectorAll('.message');
+            let text = 'Valor AI Conversation Export\\n\\n';
+            messages.forEach(msg => {
+                text += msg.textContent + '\\n\\n';
+            });
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'valor-conversation-' + new Date().toISOString().split('T')[0] + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            toggleMenu();
+        }
+        
+        function showAbout() {
+            addMessage('Valor AI v1.0 - Advanced AI Assistant with conversation memory, image analysis, and professional deployment capabilities. Built with OpenAI GPT-4o.', false);
+            toggleMenu();
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.querySelector('.nav-menu');
+            const dropdown = document.getElementById('menuDropdown');
+            if (!menu.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
         
         document.getElementById('messageInput').focus();
     </script>
