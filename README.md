@@ -1,23 +1,20 @@
-# Valor AI
+# Valor AI - Advanced Assistant
 
-Advanced AI companion platform with camera integration and real-time visual assistance.
+Your intelligent AI companion with conversation memory and image analysis capabilities.
 
-## Deploy to Digital Ocean
+## Digital Ocean Deployment
 
-### Quick Deploy
-1. Create Digital Ocean App Platform project
-2. Connect this GitHub repository
-3. Set environment variables:
-   - `OPENAI_API_KEY`: Your OpenAI API key
-   - `NODE_ENV`: production
-4. Deploy automatically
+1. Set environment variable: `OPENAI_API_KEY`
+2. Build command: (leave empty)
+3. Run command: `node valor-server.js`
 
-### Environment Variables Required
-- `OPENAI_API_KEY`: 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
+## Features
 
-### Features
-- Perfect conversation memory
-- Camera integration for real-time assistance
-- Document and image analysis
-- Smart glasses ready
-- Facial recognition capable
+- Real-time conversation with memory
+- Image analysis and processing
+- Professional web interface
+- RESTful API endpoints
+
+Built with Express.js and OpenAI GPT-4o.
+
+Last updated: 2025-05-30T23:29:17.232Z
