@@ -149,12 +149,49 @@ app.get('/', (req, res) => {
         }
         .typing { opacity: 0.7; font-style: italic; }
         .file-input { display: none; }
-        .file-button { 
+        .file-button, .camera-button, .voice-button { 
             padding: 1rem; border-radius: 50%; border: none;
             background: rgba(255,255,255,0.1); color: #fff; cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s ease; font-size: 1.2rem;
         }
-        .file-button:hover { background: rgba(255,255,255,0.2); }
+        .file-button:hover, .camera-button:hover, .voice-button:hover { 
+            background: rgba(255,255,255,0.2); 
+        }
+        .voice-button.speaking { background: rgba(255, 0, 0, 0.3); }
+        .message-actions { 
+            margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;
+        }
+        .copy-btn, .speak-btn { 
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;
+            font-size: 0.8rem; opacity: 0.7; transition: all 0.2s ease;
+        }
+        .copy-btn:hover, .speak-btn:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+        .speak-btn.speaking { background: rgba(255, 100, 100, 0.3); }
+        .camera-preview { 
+            max-width: 300px; border-radius: 8px; margin: 0.5rem 0;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        #cameraModal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        #cameraModal.show { display: flex; }
+        .camera-container { 
+            background: rgba(0,0,0,0.9); padding: 2rem; border-radius: 10px;
+            text-align: center; max-width: 90vw; max-height: 90vh;
+        }
+        #cameraVideo { 
+            max-width: 100%; max-height: 60vh; border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .camera-controls { margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; }
+        .camera-controls button { 
+            padding: 0.75rem 1.5rem; border: none; border-radius: 8px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #fff; cursor: pointer; font-weight: 600;
+        }
         @media (max-width: 768px) {
             .chat-container { padding: 0 0.5rem; }
             .message { max-width: 95%; padding: 1rem; }
@@ -174,6 +211,8 @@ app.get('/', (req, res) => {
             <div class="dropdown" id="menuDropdown">
                 <div class="dropdown-item" onclick="clearConversation()">Clear Conversation</div>
                 <div class="dropdown-item" onclick="showApiStatus()">API Status</div>
+                <div class="dropdown-item" onclick="toggleVoice()">Toggle Voice Mode</div>
+                <div class="dropdown-item" onclick="openCamera()">Camera Access</div>
                 <div class="dropdown-item" onclick="exportConversation()">Export Chat</div>
                 <div class="dropdown-item" onclick="showAbout()">About Valor</div>
             </div>
@@ -193,14 +232,44 @@ app.get('/', (req, res) => {
         </div>
     </div>
     
+    <!-- Camera Modal -->
+    <div id="cameraModal">
+        <div class="camera-container">
+            <h3>Camera Feed</h3>
+            <video id="cameraVideo" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button onclick="capturePhoto()">Capture Photo</button>
+                <button onclick="closeCamera()">Close</button>
+            </div>
+        </div>
+    </div>
+    </div>
+    
     <script>
+        let voiceEnabled = false;
+        let currentStream = null;
+        
         function addMessage(content, isUser, isTyping = false) {
             const messages = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = 'message ' + (isUser ? 'user' : 'assistant') + (isTyping ? ' typing' : '');
-            div.innerHTML = '<strong>' + (isUser ? 'You:' : 'Valor:') + '</strong> ' + content;
+            
+            if (isUser) {
+                div.innerHTML = '<strong>You:</strong> ' + content;
+            } else {
+                const messageId = 'msg_' + Date.now();
+                div.innerHTML = '<strong>Valor:</strong> ' + content + 
+                    '<div class="message-actions">' +
+                    '<button class="copy-btn" onclick="copyText(\'' + messageId + '\')">Copy</button>' +
+                    '<button class="speak-btn" onclick="speakMessage(\'' + messageId + '\')">🔊 Speak</button>' +
+                    '</div>';
+                div.setAttribute('data-message', content);
+                div.id = messageId;
+            }
+            
             messages.appendChild(div);
             messages.scrollTop = messages.scrollHeight;
+            
             return div;
         }
         
@@ -289,6 +358,145 @@ app.get('/', (req, res) => {
         function toggleMenu() {
             const dropdown = document.getElementById('menuDropdown');
             dropdown.classList.toggle('show');
+        }
+        
+        function copyText(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            const text = messageDiv.getAttribute('data-message');
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = messageDiv.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = originalText, 1000);
+            });
+        }
+        
+        function speakMessage(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            const text = messageDiv.getAttribute('data-message');
+            const btn = messageDiv.querySelector('.speak-btn');
+            
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                btn.classList.remove('speaking');
+                btn.textContent = '🔊 Speak';
+                return;
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.2;
+            
+            // Try to find a female voice with Russian accent
+            const voices = speechSynthesis.getVoices();
+            const russianVoice = voices.find(voice => 
+                voice.lang.includes('ru') && voice.name.toLowerCase().includes('female')
+            ) || voices.find(voice => 
+                voice.name.toLowerCase().includes('anna') || 
+                voice.name.toLowerCase().includes('katya') ||
+                voice.name.toLowerCase().includes('elena')
+            ) || voices.find(voice => 
+                voice.name.toLowerCase().includes('female')
+            );
+            
+            if (russianVoice) {
+                utterance.voice = russianVoice;
+            }
+            
+            btn.classList.add('speaking');
+            btn.textContent = '🔇 Stop';
+            
+            utterance.onend = () => {
+                btn.classList.remove('speaking');
+                btn.textContent = '🔊 Speak';
+            };
+            
+            speechSynthesis.speak(utterance);
+        }
+        
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            addMessage('Voice mode ' + (voiceEnabled ? 'enabled' : 'disabled') + '. Valor responses will ' + (voiceEnabled ? 'now be spoken automatically.' : 'no longer be spoken automatically.'), false);
+            toggleMenu();
+        }
+        
+        function openCamera() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                } 
+            })
+            .then(stream => {
+                currentStream = stream;
+                video.srcObject = stream;
+                modal.classList.add('show');
+            })
+            .catch(error => {
+                addMessage('Camera access denied or not available: ' + error.message, false);
+            });
+            
+            toggleMenu();
+        }
+        
+        function capturePhoto() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('image', blob, 'camera-capture.jpg');
+                
+                addMessage('📷 Camera photo captured', true);
+                setButtonState(true);
+                
+                const typingDiv = addMessage('Analyzing captured image...', false, true);
+                
+                fetch('/api/vision', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    typingDiv.remove();
+                    if (data.analysis) {
+                        addMessage('🔍 ' + data.analysis, false);
+                        if (voiceEnabled) {
+                            speakMessage('msg_' + Date.now());
+                        }
+                    } else {
+                        addMessage('Sorry, I could not analyze this image.', false);
+                    }
+                })
+                .catch(error => {
+                    typingDiv.remove();
+                    addMessage('Error analyzing image: ' + error.message, false);
+                })
+                .finally(() => {
+                    setButtonState(false);
+                });
+                
+            }, 'image/jpeg', 0.8);
+            
+            closeCamera();
+        }
+        
+        function closeCamera() {
+            const modal = document.getElementById('cameraModal');
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            modal.classList.remove('show');
         }
         
         function clearConversation() {
