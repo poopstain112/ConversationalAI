@@ -159,15 +159,18 @@ app.get('/', (req, res) => {
         }
         .voice-button.speaking { background: rgba(255, 0, 0, 0.3); }
         .message-actions { 
-            margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;
+            margin-top: 0.3rem; display: flex; gap: 0.3rem; align-items: center;
+            float: right;
         }
         .copy-btn, .speak-btn { 
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;
-            font-size: 0.8rem; opacity: 0.7; transition: all 0.2s ease;
+            background: none; border: none; color: rgba(255,255,255,0.6); 
+            cursor: pointer; font-size: 0.8rem; padding: 0.2rem;
+            transition: all 0.2s ease; border-radius: 3px;
         }
-        .copy-btn:hover, .speak-btn:hover { opacity: 1; background: rgba(255,255,255,0.2); }
-        .speak-btn.speaking { background: rgba(255, 100, 100, 0.3); }
+        .copy-btn:hover, .speak-btn:hover { 
+            color: #fff; background: rgba(255,255,255,0.1); 
+        }
+        .speak-btn.speaking { color: #ff6b6b; }
         .camera-preview { 
             max-width: 300px; border-radius: 8px; margin: 0.5rem 0;
             border: 2px solid rgba(255,255,255,0.2);
@@ -223,8 +226,8 @@ app.get('/', (req, res) => {
             <div class="message assistant" id="msg_initial" data-message="Hello Commander! I am Valor, your advanced AI assistant. I'm now live and ready to assist you with perfect conversation memory, document analysis, and image processing. How can I help you today?">
                 <strong>Valor:</strong> Hello Commander! I am Valor, your advanced AI assistant. I'm now live and ready to assist you with perfect conversation memory, document analysis, and image processing. How can I help you today?
                 <div class="message-actions">
-                    <button class="copy-btn" onclick="copyText('msg_initial')">Copy</button>
-                    <button class="speak-btn" onclick="speakMessage('msg_initial')">🔊 Speak</button>
+                    <button class="copy-btn" onclick="copyText('msg_initial')" title="Copy">📋</button>
+                    <button class="speak-btn" onclick="speakMessage('msg_initial')" title="Speak">🔊</button>
                 </div>
             </div>
         </div>
@@ -264,8 +267,8 @@ app.get('/', (req, res) => {
                 const messageId = 'msg_' + Date.now();
                 div.innerHTML = '<strong>Valor:</strong> ' + content + 
                     '<div class="message-actions">' +
-                    '<button class="copy-btn" onclick="copyText(\'' + messageId + '\')">Copy</button>' +
-                    '<button class="speak-btn" onclick="speakMessage(\'' + messageId + '\')">🔊 Speak</button>' +
+                    '<button class="copy-btn" onclick="copyText(\'' + messageId + '\')" title="Copy">📋</button>' +
+                    '<button class="speak-btn" onclick="speakMessage(\'' + messageId + '\')" title="Speak">🔊</button>' +
                     '</div>';
                 div.setAttribute('data-message', content);
                 div.id = messageId;
@@ -383,7 +386,7 @@ app.get('/', (req, res) => {
             if (speechSynthesis.speaking) {
                 speechSynthesis.cancel();
                 btn.classList.remove('speaking');
-                btn.textContent = '🔊 Speak';
+                btn.innerHTML = '🔊';
                 return;
             }
             
@@ -408,11 +411,11 @@ app.get('/', (req, res) => {
             }
             
             btn.classList.add('speaking');
-            btn.textContent = '🔇 Stop';
+            btn.innerHTML = '🔇';
             
             utterance.onend = () => {
                 btn.classList.remove('speaking');
-                btn.textContent = '🔊 Speak';
+                btn.innerHTML = '🔊';
             };
             
             speechSynthesis.speak(utterance);
@@ -505,7 +508,7 @@ app.get('/', (req, res) => {
         
         function clearConversation() {
             const messages = document.getElementById('messages');
-            messages.innerHTML = '<div class="message assistant" id="msg_cleared" data-message="Conversation cleared. How can I assist you?"><strong>Valor:</strong> Conversation cleared. How can I assist you?<div class="message-actions"><button class="copy-btn" onclick="copyText(\'msg_cleared\')">Copy</button><button class="speak-btn" onclick="speakMessage(\'msg_cleared\')">🔊 Speak</button></div></div>';
+            messages.innerHTML = '<div class="message assistant" id="msg_cleared" data-message="Conversation cleared. How can I assist you?"><strong>Valor:</strong> Conversation cleared. How can I assist you?<div class="message-actions"><button class="copy-btn" onclick="copyText(\'msg_cleared\')" title="Copy">📋</button><button class="speak-btn" onclick="speakMessage(\'msg_cleared\')" title="Speak">🔊</button></div></div>';
             toggleMenu();
             
             fetch('/api/conversation/default/clear', { method: 'POST' });
@@ -543,13 +546,16 @@ app.get('/', (req, res) => {
             toggleMenu();
         }
         
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const menu = document.querySelector('.nav-menu');
-            const dropdown = document.getElementById('menuDropdown');
-            if (!menu.contains(event.target)) {
-                dropdown.classList.remove('show');
-            }
+        // Initialize dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const menu = document.querySelector('.nav-menu');
+                const dropdown = document.getElementById('menuDropdown');
+                if (menu && dropdown && !menu.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
         });
         
         document.getElementById('messageInput').focus();
