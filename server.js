@@ -205,6 +205,7 @@ app.get('/', (req, res) => {
         
         .input-area { 
             padding: 1rem; background: #ffffff; border-top: 1px solid #e5e7eb;
+            position: sticky; bottom: 0; z-index: 50;
         }
         
         .input-container { 
