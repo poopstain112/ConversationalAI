@@ -1,17 +1,19 @@
 {
   "name": "valor-ai",
-  "version": "3.0.0",
-  "description": "Valor AI - Advanced Loyal Partner",
-  "main": "server.js",
-  "engines": {
-    "node": ">=18.0.0"
-  },
+  "version": "2.0.0",
+  "description": "Advanced AI companion with memory and loyalty",
+  "main": "valor-server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node valor-server.js",
+    "dev": "node valor-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "multer": "^1.4.5-lts.1",
-    "openai": "^4.24.1"
+    "openai": "^4.20.1",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
