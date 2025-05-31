@@ -52,50 +52,60 @@ app.get('/', (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valor AI - Your Advanced Assistant</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
         html, body { 
-            height: 100%; overflow: hidden;
+            height: 100%; width: 100%; overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         }
         body { 
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0f0f23 100%);
             color: #fff; display: flex; flex-direction: column;
         }
         .header { 
-            background: rgba(255,255,255,0.08); 
-            padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(15,15,35,0.95); 
+            padding: 1rem; display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); flex-shrink: 0;
+            backdrop-filter: blur(20px); flex-shrink: 0; z-index: 1000;
+            position: relative;
         }
-        .header h1 { font-size: 1.2rem; font-weight: 600; }
+        .header h1 { font-size: 1.1rem; font-weight: 600; color: #fff; }
         .nav-menu { position: relative; }
         .menu-button { 
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
-            display: flex; align-items: center; gap: 0.5rem;
+            background: transparent; border: none;
+            color: #fff; padding: 0.5rem; cursor: pointer;
+            font-size: 1.2rem; width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: background 0.2s ease;
         }
-        .menu-button:hover { background: rgba(255,255,255,0.2); }
+        .menu-button:hover { background: rgba(255,255,255,0.1); }
         .dropdown { 
-            position: absolute; top: 100%; right: 0; margin-top: 0.5rem;
-            background: rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px; min-width: 200px; display: none; z-index: 1000;
-            backdrop-filter: blur(10px);
+            position: absolute; top: calc(100% + 0.5rem); right: 0; 
+            background: rgba(20,20,40,0.98);
+            border-radius: 12px; min-width: 180px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15);
+            display: none; z-index: 2000; overflow: hidden;
         }
-        .dropdown.show { display: block; }
+        .dropdown.show { display: block; animation: dropdownShow 0.2s ease-out; }
+        @keyframes dropdownShow { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .dropdown-item { 
-            padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 0.9rem 1.2rem; color: #fff; 
             cursor: pointer; transition: background 0.2s ease;
+            font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .dropdown-item:hover { background: rgba(255,255,255,0.1); }
+        .dropdown-item:hover { background: rgba(255,255,255,0.08); }
         .dropdown-item:last-child { border-bottom: none; }
         .chat-container { 
             flex: 1; display: flex; flex-direction: column; 
-            width: 100%; min-height: 0;
+            width: 100%; height: calc(100vh - 70px); position: relative;
         }
         .messages { 
-            flex: 1; overflow-y: auto; padding: 1rem; 
+            flex: 1; overflow-y: auto; padding: 1rem; padding-bottom: 100px;
             scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;
-            min-height: 0;
         }
         .messages::-webkit-scrollbar { width: 6px; }
         .messages::-webkit-scrollbar-track { background: transparent; }
@@ -118,11 +128,11 @@ app.get('/', (req, res) => {
             border: 1px solid rgba(255,255,255,0.1);
         }
         .input-area { 
-            display: flex; gap: 1rem; padding: 1rem; 
-            background: rgba(255,255,255,0.05);
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; gap: 0.75rem; padding: 1rem; 
+            background: rgba(15,15,35,0.98);
             border-top: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); flex-shrink: 0;
-            position: sticky; bottom: 0;
+            backdrop-filter: blur(30px);
         }
         .input-area input { 
             flex: 1; padding: 1rem 1.5rem; border-radius: 25px; 
@@ -162,15 +172,15 @@ app.get('/', (req, res) => {
         }
         .voice-button.speaking { background: rgba(255, 0, 0, 0.3); }
         .message-actions { 
-            position: absolute; top: 0.5rem; right: 0.5rem; 
+            position: absolute; top: 0.75rem; right: 0.75rem; 
             display: flex; gap: 0.25rem; opacity: 0; transition: opacity 0.2s ease;
         }
         .message:hover .message-actions { opacity: 1; }
         .copy-btn, .speak-btn { 
-            background: rgba(0,0,0,0.7); border: none; color: #fff;
-            cursor: pointer; font-size: 0.7rem; padding: 0.2rem; border-radius: 4px;
-            width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease; border-radius: 3px;
+            background: rgba(0,0,0,0.8); border: none; color: #fff;
+            cursor: pointer; font-size: 0.8rem; padding: 0.25rem; border-radius: 6px;
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
         }
         .copy-btn:hover, .speak-btn:hover { 
             color: #fff; background: rgba(255,255,255,0.1); 
@@ -200,20 +210,26 @@ app.get('/', (req, res) => {
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: #fff; cursor: pointer; font-weight: 600;
         }
+        /* Mobile Optimizations */
         @media (max-width: 768px) {
-            .header { padding: 0.5rem 1rem; }
-            .header h1 { font-size: 1.1rem; }
-            .chat-container { height: 100vh; height: 100dvh; }
-            .message { max-width: 95%; margin: 0.25rem 0; padding: 0.75rem 1rem; }
+            .header { padding: 0.75rem 1rem; }
+            .header h1 { font-size: 1rem; }
+            .chat-container { height: calc(100vh - 60px); height: calc(100dvh - 60px); }
+            .message { max-width: 90%; margin: 0.5rem 0; padding: 0.75rem 1rem; }
             .input-area { 
-                position: fixed; bottom: 0; left: 0; right: 0; 
-                z-index: 100; backdrop-filter: blur(20px);
-                gap: 0.5rem; padding: 0.75rem;
+                padding: 0.75rem; gap: 0.5rem;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
             }
-            .input-area input { padding: 0.75rem 1rem; font-size: 1rem; }
-            .input-area button { padding: 0.75rem 1.5rem; font-size: 0.9rem; }
-            .file-button, .camera-button, .voice-button { padding: 0.75rem; font-size: 1rem; }
-            .messages { padding: 0.75rem; padding-bottom: 80px; }
+            .input-area input { 
+                padding: 0.75rem 1rem; font-size: 1rem; 
+                border-radius: 20px;
+            }
+            .input-area button { padding: 0.75rem 1.25rem; font-size: 0.9rem; }
+            .file-button, .camera-button, .voice-button { 
+                padding: 0.75rem; font-size: 1rem; width: 48px; height: 48px;
+            }
+            .messages { padding: 0.75rem; }
+            .dropdown { min-width: 160px; right: -10px; }
         }
     </style>
 </head>
@@ -222,7 +238,7 @@ app.get('/', (req, res) => {
         <h1>Valor AI - Your Advanced Assistant</h1>
         <div class="nav-menu">
             <button class="menu-button" onclick="toggleMenu()">
-                Menu ▼
+                ⋮
             </button>
             <div class="dropdown" id="menuDropdown">
                 <div class="dropdown-item" onclick="clearConversation()">Clear Conversation</div>
@@ -377,7 +393,9 @@ app.get('/', (req, res) => {
         
         function toggleMenu() {
             const dropdown = document.getElementById('menuDropdown');
-            dropdown.classList.toggle('show');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
         }
         
         function copyText(messageId) {
