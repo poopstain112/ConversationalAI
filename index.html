@@ -160,7 +160,7 @@
     </div>
     
     <div class="chat-container" id="chatContainer">
-        <!-- Messages will be added here -->
+        <!-- Messages will be loaded here -->
     </div>
     
     <div class="input-container">
@@ -175,6 +175,49 @@
         
         let continuousMode = false;
         let continuousInterval = null;
+        
+        // Chat persistence functions
+        function saveChatHistory() {
+            const messages = [];
+            const messageElements = document.querySelectorAll('.message-wrapper');
+            
+            messageElements.forEach(wrapper => {
+                const messageDiv = wrapper.querySelector('.message');
+                if (messageDiv) {
+                    messages.push({
+                        role: messageDiv.classList.contains('user') ? 'user' : 'assistant',
+                        content: messageDiv.textContent
+                    });
+                }
+            });
+            
+            localStorage.setItem('valorChatHistory', JSON.stringify(messages));
+        }
+        
+        function loadChatHistory() {
+            const savedHistory = localStorage.getItem('valorChatHistory');
+            
+            if (savedHistory) {
+                try {
+                    const messages = JSON.parse(savedHistory);
+                    const container = document.getElementById('chatContainer');
+                    container.innerHTML = '';
+                    
+                    messages.forEach(msg => {
+                        addMessage(msg.content, msg.role, false); // false = don't save to storage
+                    });
+                    
+                    if (messages.length === 0) {
+                        initializeChat();
+                    }
+                } catch (error) {
+                    console.error('Error loading chat history:', error);
+                    initializeChat();
+                }
+            } else {
+                initializeChat();
+            }
+        }
         
         // Initialize chat with welcome message
         function initializeChat() {
@@ -207,6 +250,7 @@
         function clearChat() {
             const container = document.getElementById('chatContainer');
             container.innerHTML = '';
+            localStorage.removeItem('valorChatHistory');
             addMessage("Chat cleared. How can I help you?", 'assistant');
             toggleMenu();
         }
@@ -278,7 +322,17 @@
         }
         
         function exportChat() {
-            alert('Chat export feature coming soon!');
+            const messages = JSON.parse(localStorage.getItem('valorChatHistory') || '[]');
+            const chatText = messages.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n\n');
+            
+            const blob = new Blob([chatText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'valor-chat-' + new Date().toISOString().split('T')[0] + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            
             toggleMenu();
         }
         
@@ -344,7 +398,7 @@
             sendBtn.textContent = '→';
         }
         
-        function addMessage(text, role) {
+        function addMessage(text, role, saveToStorage = true) {
             const container = document.getElementById('chatContainer');
             
             // Create wrapper div
@@ -359,6 +413,11 @@
             // Add to wrapper and container
             wrapper.appendChild(messageDiv);
             container.appendChild(wrapper);
+            
+            // Save to localStorage
+            if (saveToStorage) {
+                saveChatHistory();
+            }
             
             // Auto-scroll to bottom
             scrollToBottom();
@@ -413,7 +472,7 @@
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             setupTextarea();
-            initializeChat();
+            loadChatHistory();
             console.log('Valor AI initialized successfully');
         });
         
