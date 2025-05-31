@@ -93,142 +93,180 @@ app.get('/', (req, res) => {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Valor AI</title>
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh; overflow: hidden;
+            background: #ffffff; color: #374151; 
+            height: 100vh; overflow: hidden; position: relative;
         }
         
         .header {
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
-            padding: 1rem; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            background: #ffffff; padding: 0.75rem 1rem;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 100;
         }
+        
+        .header-left {
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        
+        .menu-icon {
+            font-size: 1.25rem; color: #374151; cursor: pointer;
+            padding: 0.5rem; border-radius: 0.5rem; transition: background 0.2s;
+        }
+        .menu-icon:hover { background: #f3f4f6; }
         
         .logo {
-            font-size: 1.4rem; font-weight: 700; 
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 1.125rem; font-weight: 600; color: #374151;
         }
         
-        .menu-btn {
-            background: rgba(255,255,255,0.8); border: none; color: #333; 
-            font-size: 1.3rem; cursor: pointer; width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .header-right {
+            display: flex; align-items: center; gap: 0.5rem;
         }
-        .menu-btn:hover { background: rgba(255,255,255,1); transform: translateY(-1px); }
+        
+        .new-chat-btn {
+            background: none; border: none; color: #374151; font-size: 1.125rem;
+            cursor: pointer; padding: 0.5rem; border-radius: 0.5rem;
+            transition: background 0.2s;
+        }
+        .new-chat-btn:hover { background: #f3f4f6; }
+        
+        .menu-btn {
+            background: none; border: none; color: #374151; 
+            font-size: 1.125rem; cursor: pointer; padding: 0.5rem;
+            border-radius: 0.5rem; transition: background 0.2s;
+        }
+        .menu-btn:hover { background: #f3f4f6; }
         
         .dropdown {
             position: absolute; top: calc(100% + 0.5rem); right: 1rem; 
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
-            border-radius: 16px; min-width: 180px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: none; z-index: 2000; 
-            overflow: hidden; border: 1px solid rgba(255,255,255,0.3);
+            background: #ffffff; border-radius: 0.5rem; min-width: 12rem; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: none; z-index: 2000; border: 1px solid #e5e7eb;
         }
         .dropdown.show { display: block; }
         
         .dropdown-item { 
-            padding: 12px 16px; color: #333; cursor: pointer; 
-            transition: all 0.2s ease; font-size: 0.95rem;
+            padding: 0.75rem 1rem; color: #374151; cursor: pointer; 
+            transition: background 0.2s; font-size: 0.875rem;
         }
-        .dropdown-item:hover { background: rgba(102,126,234,0.1); color: #667eea; }
+        .dropdown-item:hover { background: #f3f4f6; }
         
         .chat-container { 
-            height: calc(100vh - 140px); display: flex; flex-direction: column;
+            height: calc(100vh - 4rem); display: flex; flex-direction: column;
+            background: #ffffff;
         }
         
         .messages { 
-            flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; 
-            flex-direction: column; gap: 1rem; max-width: 800px; margin: 0 auto; width: 100%;
+            flex: 1; padding: 1rem; overflow-y: auto; display: flex; 
+            flex-direction: column; gap: 1rem; max-width: 48rem; margin: 0 auto; width: 100%;
         }
         
+        .messages::-webkit-scrollbar { width: 4px; }
+        .messages::-webkit-scrollbar-track { background: transparent; }
+        .messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+        
         .message { 
-            padding: 1.2rem 1.8rem; border-radius: 20px; position: relative;
-            word-wrap: break-word; line-height: 1.6; font-size: 1rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(10px);
+            padding: 0.75rem 1rem; border-radius: 0.75rem; position: relative;
+            word-wrap: break-word; line-height: 1.6; font-size: 0.875rem;
+            max-width: 100%;
         }
         
         .message.user { 
-            align-self: flex-end; background: rgba(255,255,255,0.9); color: #333;
-            max-width: 75%; margin-left: auto; border-bottom-right-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.3);
+            align-self: flex-end; background: #f3f4f6; color: #374151;
+            max-width: 70%; margin-left: auto;
         }
         
         .message.assistant { 
-            align-self: flex-start; background: rgba(255,255,255,0.95); color: #333;
-            max-width: 85%; border-bottom-left-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.3);
+            align-self: flex-start; background: transparent; color: #374151;
+            max-width: 100%; padding-left: 0; padding-right: 0;
         }
         
         .message-actions {
-            display: flex; gap: 0.8rem; margin-top: 1rem; opacity: 0.8;
+            display: flex; gap: 0.5rem; margin-top: 0.75rem; opacity: 0.6;
         }
         
         .message-actions button {
-            background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: #fff;
-            padding: 0.6rem 1rem; border-radius: 12px; cursor: pointer;
-            font-size: 0.85rem; transition: all 0.3s ease; font-weight: 500;
-            box-shadow: 0 2px 10px rgba(102,126,234,0.3);
+            background: #f3f4f6; border: none; color: #6b7280;
+            padding: 0.375rem 0.5rem; border-radius: 0.375rem; cursor: pointer;
+            font-size: 0.75rem; transition: all 0.2s; display: flex;
+            align-items: center; gap: 0.25rem;
         }
         
         .message-actions button:hover {
-            transform: translateY(-2px); box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+            background: #e5e7eb; color: #374151;
         }
         
         .input-area { 
-            padding: 1.5rem; background: transparent;
+            padding: 1rem; background: #ffffff; border-top: 1px solid #e5e7eb;
         }
         
         .input-container { 
-            display: flex; gap: 0.8rem; align-items: flex-end;
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
-            border-radius: 25px; padding: 0.8rem; max-width: 800px; margin: 0 auto;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.3);
+            display: flex; gap: 0.5rem; align-items: flex-end;
+            background: #ffffff; border-radius: 1.5rem; padding: 0.5rem;
+            border: 1px solid #d1d5db; max-width: 48rem; margin: 0 auto;
         }
         
         .file-upload { 
-            background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: #fff; 
-            border-radius: 50%; width: 44px; height: 44px; display: flex; 
+            background: #f3f4f6; border: none; color: #6b7280; border-radius: 50%;
+            width: 2rem; height: 2rem; display: flex; 
             align-items: center; justify-content: center; cursor: pointer; 
-            transition: all 0.3s ease; font-size: 1.1rem; flex-shrink: 0;
-            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+            transition: all 0.2s; font-size: 0.875rem; flex-shrink: 0;
         }
-        .file-upload:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+        .file-upload:hover { background: #e5e7eb; }
         
         .message-input { 
-            flex: 1; background: transparent; border: none; color: #333; 
-            padding: 0.8rem 1.2rem; border-radius: 20px; outline: none;
-            resize: none; min-height: 44px; max-height: 120px; font-size: 1rem;
+            flex: 1; background: transparent; border: none; color: #374151; 
+            padding: 0.5rem 0.75rem; border-radius: 1rem; outline: none;
+            resize: none; min-height: 2rem; max-height: 8rem; font-size: 1rem;
+            line-height: 1.5;
         }
-        .message-input::placeholder { color: #888; }
+        .message-input::placeholder { color: #9ca3af; }
         
         .send-button { 
-            background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: #fff; 
-            width: 44px; height: 44px; border-radius: 50%; cursor: pointer; 
+            background: #000000; border: none; color: #ffffff; 
+            width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; 
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s ease; flex-shrink: 0; font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+            transition: all 0.2s; flex-shrink: 0; font-size: 0.875rem;
         }
-        .send-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
-        .send-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .send-button:hover { background: #374151; }
+        .send-button:disabled { opacity: 0.5; cursor: not-allowed; background: #9ca3af; }
+        
+        @media (max-width: 768px) {
+            .chat-container { height: calc(100vh - 3.5rem); }
+            .header { padding: 0.5rem 1rem; }
+            .messages { padding: 0.75rem; gap: 0.75rem; }
+            .message { font-size: 0.875rem; }
+            .input-area { padding: 0.75rem; }
+        }
+        
+        @media (max-height: 600px) {
+            .chat-container { height: calc(100vh - 3rem); }
+            .header { padding: 0.375rem 1rem; }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">Valor AI</div>
-        <div style="position: relative;">
-            <button class="menu-btn" onclick="toggleMenu()">⋮</button>
-            <div class="dropdown" id="dropdown">
-                <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
-                <div class="dropdown-item" onclick="checkStatus()">API Status</div>
-                <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
+        <div class="header-left">
+            <div class="menu-icon">☰</div>
+            <div class="logo">Valor AI</div>
+        </div>
+        <div class="header-right">
+            <button class="new-chat-btn" onclick="clearChat()" title="New Chat">✏️</button>
+            <div style="position: relative;">
+                <button class="menu-btn" onclick="toggleMenu()">⋮</button>
+                <div class="dropdown" id="dropdown">
+                    <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
+                    <div class="dropdown-item" onclick="checkStatus()">API Status</div>
+                    <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
+                </div>
             </div>
         </div>
     </div>
@@ -236,10 +274,10 @@ app.get('/', (req, res) => {
     <div class="chat-container">
         <div class="messages" id="messages">
             <div class="message assistant">
-                Hello! I am Valor, your advanced AI assistant. I'm ready to help you with any questions or tasks. How can I assist you today?
+                Hello! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
                 <div class="message-actions">
                     <button onclick="copyMessage(this)">📋 Copy</button>
-                    <button onclick="speakMessage(this)">🔊 Speak</button>
+                    <button onclick="speakMessage(this)">🔊 Read</button>
                 </div>
             </div>
         </div>
@@ -254,6 +292,7 @@ app.get('/', (req, res) => {
                 class="message-input" 
                 placeholder="Ask anything..."
                 onkeydown="handleKeyPress(event)"
+                rows="1"
             ></textarea>
             <button id="sendButton" class="send-button" onclick="sendMessage()">↑</button>
         </div>
@@ -331,44 +370,57 @@ app.get('/', (req, res) => {
                 messageDiv.innerHTML = content + 
                     '<div class="message-actions">' +
                     '<button onclick="copyMessage(this)">📋 Copy</button>' +
-                    '<button onclick="speakMessage(this)">🔊 Speak</button>' +
+                    '<button onclick="speakMessage(this)">🔊 Read</button>' +
                     '</div>';
             }
             
             messagesDiv.appendChild(messageDiv);
             
-            // WORKING AUTO-SCROLL
-            setTimeout(() => {
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 50);
+            // Fixed auto-scroll
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
         
         function copyMessage(button) {
             const messageDiv = button.closest('.message');
-            const text = messageDiv.textContent.replace(/📋 Copy🔊 Speak/g, '').trim();
+            const text = messageDiv.textContent.replace(/📋 Copy🔊 Read/g, '').trim();
             
             navigator.clipboard.writeText(text).then(() => {
-                button.textContent = '✅';
+                const originalText = button.innerHTML;
+                button.innerHTML = '✅ Copied';
                 setTimeout(() => {
-                    button.innerHTML = '📋 Copy';
+                    button.innerHTML = originalText;
                 }, 2000);
             });
         }
         
         function speakMessage(button) {
             const messageDiv = button.closest('.message');
-            const text = messageDiv.textContent.replace(/📋 Copy🔊 Speak/g, '').trim();
+            const text = messageDiv.textContent.replace(/📋 Copy🔊 Read/g, '').trim();
             
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.85;
-                utterance.pitch = 1.2;
+                
+                const voices = window.speechSynthesis.getVoices();
+                const femaleVoice = voices.find(voice => 
+                    voice.lang.includes('en') && 
+                    (voice.name.toLowerCase().includes('female') || 
+                     voice.name.toLowerCase().includes('samantha') ||
+                     voice.name.toLowerCase().includes('karen'))
+                ) || voices.find(voice => voice.gender === 'female');
+                
+                if (femaleVoice) {
+                    utterance.voice = femaleVoice;
+                }
+                
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
                 window.speechSynthesis.speak(utterance);
                 
-                button.textContent = '🔇';
+                const originalText = button.innerHTML;
+                button.innerHTML = '🔇 Stop';
                 utterance.onend = () => {
-                    button.innerHTML = '🔊 Speak';
+                    button.innerHTML = originalText;
                 };
             }
         }
@@ -383,16 +435,13 @@ app.get('/', (req, res) => {
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = 
                 '<div class="message assistant">' +
-                'Chat cleared. How can I help you?' +
+                'Chat cleared. What would you like to explore?' +
                 '<div class="message-actions">' +
                 '<button onclick="copyMessage(this)">📋 Copy</button>' +
-                '<button onclick="speakMessage(this)">🔊 Speak</button>' +
+                '<button onclick="speakMessage(this)">🔊 Read</button>' +
                 '</div></div>';
             
-            setTimeout(() => {
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 50);
-            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
             toggleMenu();
         }
         
@@ -412,7 +461,7 @@ app.get('/', (req, res) => {
             const messages = document.querySelectorAll('.message');
             let text = 'Valor AI Conversation Export\n\n';
             messages.forEach(msg => {
-                text += msg.textContent.replace(/📋 Copy🔊 Speak/g, '').trim() + '\n\n';
+                text += msg.textContent.replace(/📋 Copy🔊 Read/g, '').trim() + '\n\n';
             });
             
             const blob = new Blob([text], { type: 'text/plain' });
@@ -436,9 +485,14 @@ app.get('/', (req, res) => {
         window.addEventListener('load', function() {
             document.getElementById('messageInput').focus();
             const messagesDiv = document.getElementById('messages');
-            setTimeout(() => {
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 100);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+        
+        // Auto-resize textarea
+        const textarea = document.getElementById('messageInput');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 128) + 'px';
         });
     </script>
 </body>
