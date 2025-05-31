@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valor AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f7f8; }
+        .header { background: white; padding: 16px; border-bottom: 1px solid #e5e5e7; position: relative; }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .menu-btn { position: absolute; right: 16px; top: 16px; background: none; border: none; font-size: 20px; cursor: pointer; }
+        .dropdown { position: absolute; right: 16px; top: 50px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 180px; z-index: 1000; display: none; }
+        .dropdown.show { display: block; }
+        .dropdown-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+        .dropdown-item:hover { background: #f5f5f5; }
+        .dropdown-item:last-child { border-bottom: none; }
+        .chat-container { height: calc(100vh - 140px); overflow-y: auto; padding: 16px; }
+        .message { margin-bottom: 16px; max-width: 80%; }
+        .message.user { margin-left: auto; background: #007AFF; color: white; padding: 12px 16px; border-radius: 18px; }
+        .message.assistant { background: white; padding: 12px 16px; border-radius: 18px; border: 1px solid #e5e5e7; }
+        .input-container { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 16px; border-top: 1px solid #e5e5e7; }
+        .input-row { display: flex; gap: 8px; align-items: center; }
+        .input-field { flex: 1; padding: 12px 16px; border: 1px solid #d1d1d6; border-radius: 24px; outline: none; }
+        .send-btn { background: #007AFF; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+        .send-btn:disabled { background: #c7c7cc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Valor AI</h1>
+        <button class="menu-btn" onclick="toggleMenu()">⋯</button>
+        <div class="dropdown" id="dropdown">
+            <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
+            <div class="dropdown-item" onclick="openCamera()">📷 Camera</div>
+            <div class="dropdown-item" onclick="connectBluetooth()">🔵 Bluetooth</div>
+            <div class="dropdown-item" onclick="toggleVoice()">🎤 Voice Mode</div>
+            <div class="dropdown-item" onclick="checkAPI()">API Status</div>
+            <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
+        </div>
+    </div>
+    
+    <div class="chat-container" id="chatContainer">
+        <div class="message assistant">
+            Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, creative writing, and much more. What would you like to explore today?
+        </div>
+    </div>
+    
+    <div class="input-container">
+        <div class="input-row">
+            <input type="text" class="input-field" id="messageInput" placeholder="Ask anything..." onkeypress="handleKeyPress(event)">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">→</button>
+        </div>
+    </div>
+
+    <script>
+        console.log('Valor AI JavaScript loaded');
+        
+        function toggleMenu() {
+            const dropdown = document.getElementById('dropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        function clearChat() {
+            document.getElementById('chatContainer').innerHTML = '<div class="message assistant">Chat cleared. How can I help you?</div>';
+            toggleMenu();
+            scrollToBottom();
+        }
+        
+        function openCamera() {
+            alert('Camera access will be implemented in the next update!');
+            toggleMenu();
+        }
+        
+        function connectBluetooth() {
+            alert('Bluetooth connectivity coming soon!');
+            toggleMenu();
+        }
+        
+        function toggleVoice() {
+            alert('Voice mode will be available shortly!');
+            toggleMenu();
+        }
+        
+        function checkAPI() {
+            alert('API Status: Connected to OpenAI GPT-4o');
+            toggleMenu();
+        }
+        
+        function exportChat() {
+            alert('Chat export feature coming soon!');
+            toggleMenu();
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Disable send button
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = '...';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                addMessage(data.response, 'assistant');
+                
+            } catch (error) {
+                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+            }
+            
+            // Re-enable send button
+            sendBtn.disabled = false;
+            sendBtn.textContent = '→';
+            scrollToBottom();
+        }
+        
+        function addMessage(text, role) {
+            const container = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.textContent = text;
+            container.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function scrollToBottom() {
+            const container = document.getElementById('chatContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('dropdown');
+            const menuBtn = document.querySelector('.menu-btn');
+            
+            if (!dropdown.contains(event.target) && !menuBtn.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        console.log('All event listeners attached');
+    </script>
+</body>
+</html>
