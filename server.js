@@ -119,133 +119,156 @@ app.get('/', (req, res) => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-            color: #fff; height: 100vh; overflow: hidden;
+            background: #0a0a0a; color: #fff; height: 100vh; overflow: hidden;
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1rem; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+            background: #1c1c1e; padding: 0.8rem 1rem;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid #333; position: relative; z-index: 100;
         }
         
-        .logo { 
-            font-size: 1.5rem; font-weight: bold; color: #fff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        .header-info {
+            display: flex; align-items: center; gap: 0.8rem;
+        }
+        
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.1rem; color: #fff;
+        }
+        
+        .contact-info h3 {
+            font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 2px;
+        }
+        
+        .contact-info p {
+            font-size: 0.85rem; color: #8e8e93;
         }
         
         .nav-menu { position: relative; }
         .menu-button { 
-            background: rgba(255,255,255,0.2); border: none; color: #fff; 
-            font-size: 1.4rem; cursor: pointer; width: 44px; height: 44px;
+            background: none; border: none; color: #007AFF; 
+            font-size: 1.3rem; cursor: pointer; width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; transition: all 0.2s ease;
-            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px; transition: background 0.2s ease;
         }
-        .menu-button:hover { 
-            background: rgba(255,255,255,0.3); transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
+        .menu-button:hover { background: rgba(0,122,255,0.1); }
         
         .dropdown { 
             position: absolute; top: calc(100% + 0.5rem); right: 0; 
-            background: rgba(20,20,40,0.98); border-radius: 12px; min-width: 180px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6); backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255,255,255,0.15); display: none; z-index: 2000; overflow: hidden;
+            background: #2c2c2e; border-radius: 12px; min-width: 180px; 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5); display: none; z-index: 2000; overflow: hidden;
         }
-        .dropdown.show { display: block; }
+        .dropdown.show { display: block; animation: fadeIn 0.2s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
         .dropdown-item { 
-            padding: 0.9rem 1.2rem; color: #fff; cursor: pointer; 
-            transition: background 0.2s ease; border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 12px 16px; color: #fff; cursor: pointer; 
+            transition: background 0.2s ease; font-size: 0.95rem;
         }
-        .dropdown-item:hover { background: rgba(255,255,255,0.1); }
-        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background: #3a3a3c; }
         
         .chat-container { 
             height: calc(100vh - 140px); display: flex; flex-direction: column;
+            background: #000;
         }
         
         .messages { 
-            flex: 1; padding: 1rem; overflow-y: auto; display: flex; 
-            flex-direction: column; gap: 1rem;
+            flex: 1; padding: 8px 16px; overflow-y: auto; display: flex; 
+            flex-direction: column; gap: 2px;
         }
         
         .message { 
-            max-width: 85%; padding: 1.2rem 1.8rem; border-radius: 20px; position: relative;
-            word-wrap: break-word; line-height: 1.6; margin-bottom: 0.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 75%; padding: 12px 16px; border-radius: 18px; position: relative;
+            word-wrap: break-word; line-height: 1.4; margin-bottom: 2px;
+            font-size: 0.95rem;
         }
         
         .message.user { 
-            align-self: flex-end; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin-left: auto; color: #fff;
+            align-self: flex-end; background: #007AFF; color: #fff;
+            border-bottom-right-radius: 4px; margin-left: 25%;
         }
         
         .message.assistant { 
-            align-self: flex-start; background: rgba(255,255,255,0.95);
-            color: #2c3e50; border: 1px solid rgba(255,255,255,0.3);
+            align-self: flex-start; background: #1c1c1e; color: #fff;
+            border-bottom-left-radius: 4px; margin-right: 25%;
         }
         
         .message-actions {
-            display: flex; gap: 0.5rem; margin-top: 0.8rem; opacity: 0.7;
+            display: flex; gap: 8px; margin-top: 8px; opacity: 0.8;
         }
         
         .message-actions button {
-            background: rgba(102,126,234,0.8); border: none; color: #fff;
-            padding: 0.5rem 0.8rem; border-radius: 10px; cursor: pointer;
-            font-size: 0.85rem; transition: all 0.2s ease; font-weight: 500;
+            background: rgba(0,122,255,0.15); border: none; color: #007AFF;
+            padding: 6px 12px; border-radius: 12px; cursor: pointer;
+            font-size: 0.8rem; transition: all 0.2s ease; font-weight: 500;
         }
         
         .message-actions button:hover {
-            background: rgba(102,126,234,1); transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+            background: rgba(0,122,255,0.25); transform: scale(1.05);
         }
         
         .input-area { 
-            padding: 1rem; background: rgba(20,20,40,0.95); backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 16px; background: #1c1c1e;
+            border-top: 1px solid #333; position: relative; z-index: 50;
         }
         
         .input-container { 
-            display: flex; gap: 1rem; align-items: flex-end; max-width: 1000px; margin: 0 auto;
+            display: flex; gap: 8px; align-items: flex-end;
+            background: #2c2c2e; border-radius: 20px; padding: 8px;
         }
         
         .file-upload { 
-            background: #64ffda; border: none; color: #000; border-radius: 50%;
-            width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s ease; font-size: 1.2rem;
+            background: #007AFF; border: none; color: #fff; border-radius: 50%;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease; font-size: 1rem; flex-shrink: 0;
         }
-        .file-upload:hover { transform: scale(1.05); }
+        .file-upload:hover { background: #0056CC; }
         
         .message-input { 
-            flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; padding: 1rem 1.5rem; border-radius: 25px; outline: none;
-            resize: none; min-height: 48px; max-height: 120px; font-size: 1rem;
+            flex: 1; background: transparent; border: none;
+            color: #fff; padding: 8px 12px; border-radius: 16px; outline: none;
+            resize: none; min-height: 32px; max-height: 120px; font-size: 0.95rem;
+            line-height: 1.4;
         }
-        .message-input::placeholder { color: rgba(255,255,255,0.6); }
+        .message-input::placeholder { color: #8e8e93; }
         
         .send-button { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none; color: #fff; padding: 0.8rem 2rem; border-radius: 25px;
-            cursor: pointer; font-weight: 600; transition: all 0.2s ease;
+            background: #007AFF; border: none; color: #fff; 
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease; flex-shrink: 0; font-size: 0.9rem;
         }
-        .send-button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.4); }
-        .send-button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .send-button:hover { background: #0056CC; }
+        .send-button:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        .loading { opacity: 0.7; }
+        .timestamp {
+            font-size: 0.75rem; color: #8e8e93; margin-top: 4px; text-align: right;
+        }
+        
+        .message.assistant .timestamp {
+            text-align: left;
+        }
         
         @media (max-width: 768px) {
-            .message { max-width: 95%; }
-            .input-container { gap: 0.5rem; }
-            .send-button { padding: 0.8rem 1.5rem; }
+            .message { max-width: 85%; font-size: 0.9rem; }
+            .header { padding: 0.6rem 1rem; }
+            .input-area { padding: 6px 12px; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">Valor AI</div>
+        <div class="header-info">
+            <div class="avatar">V</div>
+            <div class="contact-info">
+                <h3>Valor AI</h3>
+                <p>Online • AI Assistant</p>
+            </div>
+        </div>
         <div class="nav-menu">
             <button class="menu-button" onclick="toggleDropdown()">⋮</button>
             <div class="dropdown" id="dropdown">
@@ -260,7 +283,7 @@ app.get('/', (req, res) => {
     <div class="chat-container">
         <div class="messages" id="messages">
             <div class="message assistant">
-                <strong>Valor:</strong> Hello Commander! I am Valor, your advanced AI assistant. I'm ready to help you with any questions or tasks. How can I assist you today?
+                Hello Commander! I am Valor, your advanced AI assistant. I'm ready to help you with any questions or tasks. How can I assist you today?
                 <div class="message-actions">
                     <button onclick="copyMessage(this)">📋 Copy</button>
                     <button onclick="speakMessage(this)">🔊 Speak</button>
@@ -276,10 +299,10 @@ app.get('/', (req, res) => {
             <textarea 
                 id="messageInput" 
                 class="message-input" 
-                placeholder="Type your message to Valor..."
+                placeholder="Message..."
                 onkeydown="handleKeyPress(event)"
             ></textarea>
-            <button id="sendButton" class="send-button" onclick="sendMessage()">Send</button>
+            <button id="sendButton" class="send-button" onclick="sendMessage()">↑</button>
         </div>
     </div>
 
@@ -362,9 +385,9 @@ app.get('/', (req, res) => {
             messageDiv.className = 'message ' + (isUser ? 'user' : 'assistant');
             
             if (isUser) {
-                messageDiv.innerHTML = '<strong>You:</strong> ' + content;
+                messageDiv.innerHTML = content;
             } else {
-                messageDiv.innerHTML = '<strong>Valor:</strong> ' + content + 
+                messageDiv.innerHTML = content + 
                     '<div class="message-actions">' +
                     '<button onclick="copyMessage(this)">📋 Copy</button>' +
                     '<button onclick="speakMessage(this)">🔊 Speak</button>' +
@@ -381,7 +404,7 @@ app.get('/', (req, res) => {
             const text = messageDiv.textContent.replace(/📋 Copy🔊 Speak/g, '').trim();
             
             navigator.clipboard.writeText(text).then(() => {
-                button.textContent = '✅ Copied';
+                button.textContent = '✅';
                 setTimeout(() => {
                     button.innerHTML = '📋 Copy';
                 }, 2000);
@@ -391,16 +414,31 @@ app.get('/', (req, res) => {
         // Speak message function
         function speakMessage(button) {
             const messageDiv = button.closest('.message');
-            const text = messageDiv.textContent.replace(/📋 Copy🔊 Speak/g, '').replace(/^(You:|Valor:)/, '').trim();
+            const text = messageDiv.textContent.replace(/📋 Copy🔊 Speak/g, '').trim();
             
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.9;
-                utterance.pitch = 1.1;
+                
+                // Try to find a female voice with Russian accent or similar
+                const voices = window.speechSynthesis.getVoices();
+                const russianVoice = voices.find(voice => 
+                    voice.lang.includes('ru') && voice.name.toLowerCase().includes('female')
+                ) || voices.find(voice => 
+                    voice.name.toLowerCase().includes('elena') || 
+                    voice.name.toLowerCase().includes('katya') ||
+                    voice.name.toLowerCase().includes('russian')
+                ) || voices.find(voice => voice.gender === 'female');
+                
+                if (russianVoice) {
+                    utterance.voice = russianVoice;
+                }
+                
+                utterance.rate = 0.85;
+                utterance.pitch = 1.2;
                 window.speechSynthesis.speak(utterance);
                 
-                button.textContent = '🔇 Stop';
+                button.textContent = '🔇';
                 utterance.onend = () => {
                     button.innerHTML = '🔊 Speak';
                 };
