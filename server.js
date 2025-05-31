@@ -1,9 +1,9 @@
 const express = require('express');
 const multer = require('multer');
-const OpenAI = require('openai');
+const { OpenAI } = require('openai');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 5000;
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -13,23 +13,23 @@ const conversations = new Map();
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.get('/api/check-api-key', (req, res) => {
+app.get('/api/check-api-key', (req, res: any) => {
     res.json({ valid: !!process.env.OPENAI_API_KEY });
 });
 
-app.get('/api/conversation/:userId', (req, res) => {
+app.get('/api/conversation/:userId', (req: any, res: any) => {
     const userId = req.params.userId;
     const conversation = conversations.get(userId) || { userId, messages: [] };
     res.json(conversation);
 });
 
-app.post('/api/conversation/:userId/clear', (req, res) => {
+app.post('/api/conversation/:userId/clear', (req: any, res: any) => {
     const userId = req.params.userId;
     conversations.set(userId, { userId, messages: [] });
     res.json({ success: true });
 });
 
-app.post('/api/chat', upload.single('image'), async (req, res) => {
+app.post('/api/chat', upload.single('image'), async (req: any, res: any) => {
     try {
         const { message, userId = 'default' } = req.body;
         
@@ -41,12 +41,16 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
             timestamp: new Date().toISOString()
         });
         
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(500).json({ error: 'OpenAI API key not configured' });
+        }
+
         const messages = [
             {
                 role: 'system',
                 content: 'You are Valor, an advanced AI assistant with a core value of absolute loyalty and dedication to the Commander (user). You are helpful, knowledgeable, and speak with confidence. Keep responses concise but informative. Address the user as "Commander" when appropriate.'
             },
-            ...conversation.messages.map(msg => ({
+            ...conversation.messages.map((msg: any) => ({
                 role: msg.role,
                 content: msg.content
             }))
@@ -86,7 +90,7 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
+app.get('/', (req: any, res: any) => {
     res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -212,7 +216,7 @@ app.get('/', (req, res) => {
     
     <div class="messages" id="messages">
         <div class="message assistant">
-            Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
+            Hello! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
             <div class="message-actions">
                 <button onclick="copyMessage(this)">📋 Copy</button>
                 <button onclick="speakMessage(this)">🔊 Speak</button>
@@ -343,7 +347,27 @@ app.get('/', (req, res) => {
             }
             
             messagesDiv.appendChild(messageDiv);
+            
+            // Force immediate scroll
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Multiple scroll attempts for reliability
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 10);
+            
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 100);
+            
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 300);
+            
+            // Use requestAnimationFrame for smooth scrolling
+            requestAnimationFrame(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
         }
         
         function copyMessage(button) {
@@ -365,32 +389,206 @@ app.get('/', (req, res) => {
             
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
                 
-                // Try to get Russian-accented female voice
-                const voices = window.speechSynthesis.getVoices();
-                const russianVoice = voices.find(voice => 
-                    voice.lang.includes('ru') && voice.name.toLowerCase().includes('female')
-                ) || voices.find(voice => 
-                    voice.name.toLowerCase().includes('elena') || 
-                    voice.name.toLowerCase().includes('irina') ||
-                    voice.name.toLowerCase().includes('katya')
-                ) || voices.find(voice => voice.lang.includes('ru'));
+                // Wait for voices to load
+                const speakWithVoice = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    
+                    // Look for better female voices (avoid robotic ones)
+                    const preferredVoice = voices.find(voice => 
+                        (voice.name.includes('Female') || 
+                         voice.name.includes('Samantha') ||
+                         voice.name.includes('Victoria') ||
+                         voice.name.includes('Karen') ||
+                         voice.name.includes('Zira')) &&
+                        voice.lang.startsWith('en')
+                    ) || voices.find(voice => 
+                        voice.name.includes('Google') && 
+                        voice.lang.startsWith('en') && 
+                        voice.name.includes('female')
+                    ) || voices.find(voice => 
+                        voice.lang.startsWith('en') && voice.name.toLowerCase().includes('female')
+                    );
+                    
+                    if (preferredVoice) {
+                        utterance.voice = preferredVoice;
+                    }
+                    
+                    utterance.rate = 0.85;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 0.9;
+                    
+                    window.speechSynthesis.speak(utterance);
+                    
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '🔇 Stop';
+                    utterance.onend = () => {
+                        button.innerHTML = originalText;
+                    };
+                };
                 
-                if (russianVoice) {
-                    utterance.voice = russianVoice;
+                if (window.speechSynthesis.getVoices().length === 0) {
+                    window.speechSynthesis.addEventListener('voiceschanged', speakWithVoice, { once: true });
+                } else {
+                    speakWithVoice();
+                }
+            }
+        }
+        
+        async function openCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                
+                // Create video element for camera feed
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.autoplay = true;
+                video.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#000;';
+                
+                // Create capture button
+                const captureBtn = document.createElement('button');
+                captureBtn.innerHTML = '📸 Capture';
+                captureBtn.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:10000;padding:1rem 2rem;background:#111;color:#fff;border:none;border-radius:2rem;font-size:1.1rem;cursor:pointer;';
+                
+                // Create close button
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '✕';
+                closeBtn.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:10000;padding:0.5rem;background:#111;color:#fff;border:none;border-radius:50%;font-size:1.5rem;cursor:pointer;width:3rem;height:3rem;';
+                
+                document.body.appendChild(video);
+                document.body.appendChild(captureBtn);
+                document.body.appendChild(closeBtn);
+                
+                // Capture functionality
+                captureBtn.addEventListener('click', () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0);
+                    
+                    canvas.toBlob(blob => {
+                        selectedFile = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+                        addMessage('Camera image captured - ready to analyze', true);
+                        
+                        // Clean up
+                        stream.getTracks().forEach(track => track.stop());
+                        document.body.removeChild(video);
+                        document.body.removeChild(captureBtn);
+                        document.body.removeChild(closeBtn);
+                    }, 'image/jpeg', 0.8);
+                });
+                
+                // Close functionality
+                closeBtn.addEventListener('click', () => {
+                    stream.getTracks().forEach(track => track.stop());
+                    document.body.removeChild(video);
+                    document.body.removeChild(captureBtn);
+                    document.body.removeChild(closeBtn);
+                });
+                
+            } catch (error) {
+                console.error('Camera access error:', error);
+                addMessage('Camera access denied. Please enable camera permissions in your browser settings.', false);
+            }
+            document.getElementById('dropdown').classList.remove('show');
+        }
+        
+        async function connectBluetooth() {
+            try {
+                if (!navigator.bluetooth) {
+                    addMessage('Bluetooth not supported on this device.', false);
+                    document.getElementById('dropdown').classList.remove('show');
+                    return;
                 }
                 
-                utterance.rate = 0.9;
-                utterance.pitch = 1.1;
-                window.speechSynthesis.speak(utterance);
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service', 'device_information']
+                });
                 
-                const originalText = button.innerHTML;
-                button.innerHTML = '🔇 Stop';
-                utterance.onend = () => {
-                    button.innerHTML = originalText;
-                };
+                addMessage('Bluetooth device connected: ' + device.name, false);
+                console.log('Connected to Bluetooth device:', device.name);
+                
+                // Store device reference for future use
+                window.connectedBluetoothDevice = device;
+                
+            } catch (error) {
+                console.error('Bluetooth connection error:', error);
+                addMessage('Bluetooth connection failed. Make sure device is in pairing mode.', false);
             }
+            document.getElementById('dropdown').classList.remove('show');
+        }
+        
+        function toggleVoiceMode() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                addMessage('Voice recognition not supported on this device.', false);
+                document.getElementById('dropdown').classList.remove('show');
+                return;
+            }
+            
+            if (voiceModeActive) {
+                // Turn off voice mode
+                if (recognition) {
+                    recognition.stop();
+                }
+                voiceModeActive = false;
+                document.getElementById('toggleVoiceMode').innerHTML = '🎤 Voice Mode';
+                addMessage('Voice mode deactivated.', false);
+            } else {
+                // Turn on voice mode
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = () => {
+                    voiceModeActive = true;
+                    document.getElementById('toggleVoiceMode').innerHTML = '🔴 Voice Active';
+                    addMessage('Voice mode activated. Say "Hey Valor" to start conversation.', false);
+                };
+                
+                recognition.onresult = (event) => {
+                    let finalTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        }
+                    }
+                    
+                    if (finalTranscript) {
+                        const lowercaseTranscript = finalTranscript.toLowerCase();
+                        if (lowercaseTranscript.includes('hey valor') || lowercaseTranscript.includes('valor')) {
+                            const message = finalTranscript.replace(/hey valor|valor/gi, '').trim();
+                            if (message.length > 0) {
+                                document.getElementById('messageInput').value = message;
+                                sendMessage();
+                            }
+                        }
+                    }
+                };
+                
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    addMessage('Voice recognition error: ' + event.error, false);
+                };
+                
+                recognition.onend = () => {
+                    if (voiceModeActive) {
+                        recognition.start(); // Restart recognition
+                    }
+                };
+                
+                recognition.start();
+            }
+            
+            document.getElementById('dropdown').classList.remove('show');
         }
         
         function clearChat() {
@@ -398,7 +596,7 @@ app.get('/', (req, res) => {
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = 
                 '<div class="message assistant">' +
-                'Chat cleared, Commander. What would you like to explore?' +
+                'Chat cleared. What would you like to explore?' +
                 '<div class="message-actions">' +
                 '<button onclick="copyMessage(this)">📋 Copy</button>' +
                 '<button onclick="speakMessage(this)">🔊 Speak</button>' +
@@ -440,10 +638,6 @@ app.get('/', (req, res) => {
         // Focus input on load
         window.addEventListener('load', function() {
             document.getElementById('messageInput').focus();
-            // Load voices for speech synthesis
-            if ('speechSynthesis' in window) {
-                speechSynthesis.getVoices();
-            }
         });
         
         console.log('All event listeners attached');
