@@ -119,13 +119,15 @@ app.get('/', (req, res) => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f7f7f8; color: #000; height: 100vh; overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #000; height: 100vh; overflow: hidden;
         }
         
         .header {
-            background: #fff; padding: 1rem;
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #e5e5e7; position: relative; z-index: 100;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+            padding: 1rem; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.3); position: relative; z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
         }
         
         .header-left {
@@ -133,11 +135,13 @@ app.get('/', (req, res) => {
         }
         
         .menu-icon {
-            font-size: 1.4rem; color: #000; cursor: pointer;
+            font-size: 1.4rem; color: #333; cursor: pointer;
         }
         
         .logo {
-            font-size: 1.3rem; font-weight: 600; color: #000;
+            font-size: 1.4rem; font-weight: 700; 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         
         .header-right {
@@ -145,117 +149,140 @@ app.get('/', (req, res) => {
         }
         
         .new-chat-btn {
-            background: none; border: none; color: #000; font-size: 1.2rem;
-            cursor: pointer; padding: 0.5rem; border-radius: 8px;
-            transition: background 0.2s ease;
+            background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: #fff; 
+            font-size: 1.1rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 12px;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102,126,234,0.3);
         }
-        .new-chat-btn:hover { background: #f0f0f0; }
+        .new-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
         
         .nav-menu { position: relative; }
         .menu-button { 
-            background: none; border: none; color: #000; 
+            background: rgba(255,255,255,0.8); border: none; color: #333; 
             font-size: 1.3rem; cursor: pointer; width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 8px; transition: background 0.2s ease;
+            border-radius: 12px; transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .menu-button:hover { background: #f0f0f0; }
+        .menu-button:hover { background: rgba(255,255,255,1); transform: translateY(-1px); }
         
         .dropdown { 
             position: absolute; top: calc(100% + 0.5rem); right: 0; 
-            background: #fff; border-radius: 12px; min-width: 180px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: none; z-index: 2000; 
-            overflow: hidden; border: 1px solid #e5e5e7;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+            border-radius: 16px; min-width: 180px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: none; z-index: 2000; 
+            overflow: hidden; border: 1px solid rgba(255,255,255,0.3);
         }
-        .dropdown.show { display: block; animation: fadeIn 0.2s ease; }
+        .dropdown.show { display: block; animation: fadeIn 0.3s ease; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(-10px) scale(0.95); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
         
         .dropdown-item { 
-            padding: 12px 16px; color: #000; cursor: pointer; 
-            transition: background 0.2s ease; font-size: 0.95rem;
+            padding: 12px 16px; color: #333; cursor: pointer; 
+            transition: all 0.2s ease; font-size: 0.95rem;
         }
-        .dropdown-item:hover { background: #f0f0f0; }
+        .dropdown-item:hover { background: rgba(102,126,234,0.1); color: #667eea; }
         
         .chat-container { 
-            height: calc(100vh - 150px); display: flex; flex-direction: column;
-            background: #f7f7f8;
+            height: calc(100vh - 140px); display: flex; flex-direction: column;
+            background: transparent;
         }
         
         .messages { 
-            flex: 1; padding: 1rem; overflow-y: auto; display: flex; 
+            flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; 
             flex-direction: column; gap: 1rem; max-width: 800px; margin: 0 auto; width: 100%;
         }
         
+        .messages::-webkit-scrollbar { width: 6px; }
+        .messages::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        .messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+        
         .message { 
-            padding: 1rem 1.5rem; border-radius: 12px; position: relative;
+            padding: 1.2rem 1.8rem; border-radius: 20px; position: relative;
             word-wrap: break-word; line-height: 1.6; font-size: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(10px);
+            animation: messageSlide 0.4s ease-out;
+        }
+        
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .message.user { 
-            align-self: flex-end; background: #e7e7e9; color: #000;
-            max-width: 70%; margin-left: auto;
+            align-self: flex-end; background: rgba(255,255,255,0.9); color: #333;
+            max-width: 75%; margin-left: auto; border-bottom-right-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
         }
         
         .message.assistant { 
-            align-self: flex-start; background: #fff; color: #000;
-            max-width: 85%; border: 1px solid #e5e5e7;
+            align-self: flex-start; background: rgba(255,255,255,0.95); color: #333;
+            max-width: 85%; border-bottom-left-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
         }
         
         .message-actions {
-            display: flex; gap: 0.5rem; margin-top: 1rem; opacity: 0.7;
+            display: flex; gap: 0.8rem; margin-top: 1rem; opacity: 0.8;
             justify-content: flex-start;
         }
         
         .message-actions button {
-            background: #f0f0f0; border: none; color: #666;
-            padding: 0.5rem; border-radius: 8px; cursor: pointer;
-            font-size: 0.9rem; transition: all 0.2s ease; display: flex;
-            align-items: center; gap: 0.3rem;
+            background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: #fff;
+            padding: 0.6rem 1rem; border-radius: 12px; cursor: pointer;
+            font-size: 0.85rem; transition: all 0.3s ease; display: flex;
+            align-items: center; gap: 0.4rem; font-weight: 500;
+            box-shadow: 0 2px 10px rgba(102,126,234,0.3);
         }
         
         .message-actions button:hover {
-            background: #e0e0e0; color: #000;
+            transform: translateY(-2px); box-shadow: 0 4px 15px rgba(102,126,234,0.4);
         }
         
         .input-area { 
-            padding: 1rem; background: #f7f7f8; position: relative; z-index: 50;
+            padding: 1.5rem; background: transparent; position: relative; z-index: 50;
         }
         
         .input-container { 
-            display: flex; gap: 0.5rem; align-items: flex-end;
-            background: #fff; border-radius: 24px; padding: 0.5rem;
-            border: 1px solid #e5e5e7; max-width: 800px; margin: 0 auto;
+            display: flex; gap: 0.8rem; align-items: flex-end;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+            border-radius: 25px; padding: 0.8rem; max-width: 800px; margin: 0 auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.3);
         }
         
         .file-upload { 
-            background: #f0f0f0; border: none; color: #666; border-radius: 50%;
-            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s ease; font-size: 1.1rem; flex-shrink: 0;
+            background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: #fff; 
+            border-radius: 50%; width: 44px; height: 44px; display: flex; 
+            align-items: center; justify-content: center; cursor: pointer; 
+            transition: all 0.3s ease; font-size: 1.1rem; flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
         }
-        .file-upload:hover { background: #e0e0e0; }
+        .file-upload:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
         
         .message-input { 
-            flex: 1; background: transparent; border: none;
-            color: #000; padding: 0.75rem 1rem; border-radius: 20px; outline: none;
-            resize: none; min-height: 40px; max-height: 120px; font-size: 1rem;
+            flex: 1; background: transparent; border: none; color: #333; 
+            padding: 0.8rem 1.2rem; border-radius: 20px; outline: none;
+            resize: none; min-height: 44px; max-height: 120px; font-size: 1rem;
             line-height: 1.4;
         }
-        .message-input::placeholder { color: #999; }
+        .message-input::placeholder { color: #888; }
         
         .send-button { 
-            background: #000; border: none; color: #fff; 
-            width: 40px; height: 40px; border-radius: 50%; cursor: pointer; 
+            background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: #fff; 
+            width: 44px; height: 44px; border-radius: 50%; cursor: pointer; 
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease; flex-shrink: 0; font-size: 1rem;
+            transition: all 0.3s ease; flex-shrink: 0; font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
         }
-        .send-button:hover { background: #333; }
-        .send-button:disabled { opacity: 0.5; cursor: not-allowed; background: #ccc; }
+        .send-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+        .send-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
         @media (max-width: 768px) {
-            .messages { padding: 0.5rem; }
-            .message { font-size: 0.95rem; padding: 1rem; }
+            .messages { padding: 1rem; }
+            .message { font-size: 0.95rem; padding: 1rem 1.4rem; }
             .header { padding: 0.8rem 1rem; }
-            .input-area { padding: 0.5rem; }
+            .input-area { padding: 1rem; }
             .input-container { margin: 0 0.5rem; }
         }
     </style>
@@ -396,10 +423,14 @@ app.get('/', (req, res) => {
             
             messagesDiv.appendChild(messageDiv);
             
-            // Improved auto-scroll with delay
-            setTimeout(() => {
+            // Force scroll to bottom immediately and with delay
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            requestAnimationFrame(() => {
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 100);
+                setTimeout(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }, 100);
+            });
         }
         
         // Copy message function
@@ -452,7 +483,13 @@ app.get('/', (req, res) => {
         // Toggle dropdown
         function toggleDropdown() {
             const dropdown = document.getElementById('dropdown');
-            dropdown.classList.toggle('show');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+                dropdown.classList.remove('show');
+            } else {
+                dropdown.style.display = 'block';
+                dropdown.classList.add('show');
+            }
         }
         
         // Clear chat
@@ -534,23 +571,16 @@ app.get('/', (req, res) => {
             }
         });
         
-        // Also add scroll behavior to the messages container
-        const observer = new MutationObserver(function(mutations) {
-            const messagesDiv = document.getElementById('messages');
-            if (messagesDiv && mutations.length > 0) {
-                setTimeout(() => {
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                }, 50);
-            }
-        });
-        
-        // Start observing when page loads
-        window.addEventListener('load', function() {
+        // Simple scroll function
+        function scrollToBottom() {
             const messagesDiv = document.getElementById('messages');
             if (messagesDiv) {
-                observer.observe(messagesDiv, { childList: true });
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                requestAnimationFrame(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
             }
-        });
+        }
     </script>
 </body>
 </html>
