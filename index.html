@@ -24,17 +24,33 @@
         .input-field { flex: 1; padding: 12px 16px; border: 1px solid #d1d1d6; border-radius: 24px; outline: none; }
         .send-btn { background: #007AFF; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
         .send-btn:disabled { background: #c7c7cc; cursor: not-allowed; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; }
+        .modal-content { background: white; margin: 50px auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 12px; }
+        .modal-header { display: flex; justify-content: between; align-items: center; margin-bottom: 20px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; float: right; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #d1d1d6; border-radius: 8px; }
+        .form-textarea { width: 100%; padding: 12px; border: 1px solid #d1d1d6; border-radius: 8px; min-height: 100px; resize: vertical; }
+        .btn { background: #007AFF; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin-right: 8px; }
+        .btn:disabled { background: #c7c7cc; cursor: not-allowed; }
+        .code-output { background: #f5f5f5; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .continuous-mode { background: #ff6b6b; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; margin-left: auto; }
+        .continuous-mode.active { background: #51cf66; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Valor AI</h1>
+        <div class="continuous-mode" id="continuousIndicator">Continuous: OFF</div>
         <button class="menu-btn" onclick="toggleMenu()">⋯</button>
         <div class="dropdown" id="dropdown">
             <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
             <div class="dropdown-item" onclick="openCamera()">📷 Camera</div>
             <div class="dropdown-item" onclick="connectBluetooth()">🔵 Bluetooth</div>
             <div class="dropdown-item" onclick="toggleVoice()">🎤 Voice Mode</div>
+            <div class="dropdown-item" onclick="openGcodeModal()">⚙️ G-Code Generator</div>
+            <div class="dropdown-item" onclick="toggleContinuous()">🔄 Run Continuously</div>
             <div class="dropdown-item" onclick="checkAPI()">API Status</div>
             <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
         </div>
@@ -42,7 +58,7 @@
     
     <div class="chat-container" id="chatContainer">
         <div class="message assistant">
-            Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, creative writing, and much more. What would you like to explore today?
+            Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, creative writing, G-code generation, and much more. What would you like to explore today?
         </div>
     </div>
     
@@ -53,8 +69,32 @@
         </div>
     </div>
 
+    <!-- G-Code Modal -->
+    <div class="modal" id="gcodeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>G-Code Generator</h3>
+                <button class="close-btn" onclick="closeGcodeModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Describe what you want to 3D print:</label>
+                <textarea class="form-textarea" id="gcodeDescription" placeholder="Example: A miniature dragon with intricate details and supports"></textarea>
+            </div>
+            <button class="btn" id="generateBtn" onclick="generateGcode()">Generate G-Code</button>
+            <div id="gcodeResult" style="display: none;">
+                <h4>Generated G-Code:</h4>
+                <div class="code-output" id="gcodeOutput"></div>
+                <button class="btn" onclick="copyGcode()">Copy</button>
+                <button class="btn" onclick="downloadGcode()">Download</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         console.log('Valor AI JavaScript loaded');
+        
+        let continuousMode = false;
+        let continuousInterval = null;
         
         function toggleMenu() {
             const dropdown = document.getElementById('dropdown');
@@ -82,6 +122,108 @@
             toggleMenu();
         }
         
+        function openGcodeModal() {
+            document.getElementById('gcodeModal').style.display = 'block';
+            toggleMenu();
+        }
+        
+        function closeGcodeModal() {
+            document.getElementById('gcodeModal').style.display = 'none';
+        }
+        
+        function toggleContinuous() {
+            continuousMode = !continuousMode;
+            const indicator = document.getElementById('continuousIndicator');
+            
+            if (continuousMode) {
+                indicator.textContent = 'Continuous: ON';
+                indicator.classList.add('active');
+                startContinuousMode();
+            } else {
+                indicator.textContent = 'Continuous: OFF';
+                indicator.classList.remove('active');
+                stopContinuousMode();
+            }
+            toggleMenu();
+        }
+        
+        function startContinuousMode() {
+            const prompts = [
+                "Generate a creative story idea",
+                "Suggest an innovative app concept", 
+                "Create a business strategy",
+                "Design a new gadget idea",
+                "Develop a marketing campaign"
+            ];
+            
+            let index = 0;
+            continuousInterval = setInterval(() => {
+                const prompt = prompts[index % prompts.length];
+                addMessage(prompt, 'user');
+                sendAIMessage(prompt);
+                index++;
+            }, 10000); // Every 10 seconds
+        }
+        
+        function stopContinuousMode() {
+            if (continuousInterval) {
+                clearInterval(continuousInterval);
+                continuousInterval = null;
+            }
+        }
+        
+        async function generateGcode() {
+            const description = document.getElementById('gcodeDescription').value.trim();
+            
+            if (!description) {
+                alert('Please describe what you want to 3D print.');
+                return;
+            }
+            
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            
+            try {
+                const response = await fetch('/api/gcode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description })
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('gcodeOutput').textContent = data.gcode;
+                document.getElementById('gcodeResult').style.display = 'block';
+                
+                addMessage(`Generate G-code for: ${description}`, 'user');
+                addMessage(data.gcode, 'assistant');
+                
+            } catch (error) {
+                alert('G-code generation failed. Please try again.');
+            }
+            
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate G-Code';
+        }
+        
+        function copyGcode() {
+            const output = document.getElementById('gcodeOutput').textContent;
+            navigator.clipboard.writeText(output);
+            alert('G-code copied to clipboard!');
+        }
+        
+        function downloadGcode() {
+            const output = document.getElementById('gcodeOutput').textContent;
+            const blob = new Blob([output], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'valor-generated.gcode';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
         function checkAPI() {
             alert('API Status: Connected to OpenAI GPT-4o');
             toggleMenu();
@@ -104,11 +246,13 @@
             
             if (!message) return;
             
-            // Add user message
             addMessage(message, 'user');
             input.value = '';
             
-            // Disable send button
+            await sendAIMessage(message);
+        }
+        
+        async function sendAIMessage(message) {
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
             sendBtn.textContent = '...';
@@ -127,7 +271,6 @@
                 addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
             }
             
-            // Re-enable send button
             sendBtn.disabled = false;
             sendBtn.textContent = '→';
             scrollToBottom();
@@ -156,6 +299,14 @@
                 dropdown.classList.remove('show');
             }
         });
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('gcodeModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
         
         console.log('All event listeners attached');
     </script>
