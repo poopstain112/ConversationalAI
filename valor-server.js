@@ -174,16 +174,14 @@ app.get('/', (req, res) => {
         }
         .voice-button.speaking { background: rgba(255, 0, 0, 0.3); }
         .message-actions { 
-            position: absolute; top: 0.75rem; right: 0.75rem; 
-            display: flex; gap: 0.25rem; opacity: 1; transition: opacity 0.2s ease;
+            margin-top: 0.5rem; display: flex; gap: 0.5rem; 
+            justify-content: flex-end; opacity: 1;
         }
-        .assistant .message-actions { opacity: 0.7; }
-        .assistant:hover .message-actions { opacity: 1; }
         .copy-btn, .speak-btn { 
-            background: rgba(0,0,0,0.8); border: none; color: #fff;
-            cursor: pointer; font-size: 0.8rem; padding: 0.25rem; border-radius: 6px;
-            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; cursor: pointer; font-size: 0.75rem; padding: 0.3rem 0.6rem; 
+            border-radius: 15px; transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 0.25rem;
         }
         .copy-btn:hover, .speak-btn:hover { 
             color: #fff; background: rgba(255,255,255,0.1); 
@@ -385,6 +383,8 @@ app.get('/', (req, res) => {
                 
                 if (data.analysis) {
                     addMessage('🔍 ' + data.analysis, false);
+                } else if (data.message) {
+                    addMessage('🔍 ' + data.message, false);
                 } else {
                     addMessage('Sorry, I could not analyze this image. Please try again.', false);
                 }
@@ -398,32 +398,65 @@ app.get('/', (req, res) => {
         }
         
         function toggleMenu() {
+            console.log('Toggle menu clicked');
             const dropdown = document.getElementById('menuDropdown');
             if (dropdown) {
                 dropdown.classList.toggle('show');
+                console.log('Dropdown classes:', dropdown.className);
+            } else {
+                console.error('Dropdown not found');
             }
         }
         
         function copyText(messageId) {
+            console.log('Copy button clicked for:', messageId);
             const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) {
+                console.error('Message element not found:', messageId);
+                return;
+            }
+            
             const text = messageDiv.getAttribute('data-message');
+            const btn = messageDiv.querySelector('.copy-btn');
+            
+            if (!text) {
+                console.error('No text to copy');
+                return;
+            }
+            
             navigator.clipboard.writeText(text).then(() => {
-                const btn = messageDiv.querySelector('.copy-btn');
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => btn.textContent = originalText, 1000);
+                if (btn) {
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✓';
+                    setTimeout(() => btn.innerHTML = originalText, 1000);
+                }
+            }).catch(err => {
+                console.error('Failed to copy text:', err);
             });
         }
         
         function speakMessage(messageId) {
+            console.log('Speak button clicked for:', messageId);
             const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) {
+                console.error('Message element not found:', messageId);
+                return;
+            }
+            
             const text = messageDiv.getAttribute('data-message');
             const btn = messageDiv.querySelector('.speak-btn');
             
+            if (!text) {
+                console.error('No text to speak');
+                return;
+            }
+            
             if (speechSynthesis.speaking) {
                 speechSynthesis.cancel();
-                btn.classList.remove('speaking');
-                btn.innerHTML = '🔊';
+                if (btn) {
+                    btn.classList.remove('speaking');
+                    btn.innerHTML = '🔊';
+                }
                 return;
             }
             
@@ -447,12 +480,16 @@ app.get('/', (req, res) => {
                 utterance.voice = russianVoice;
             }
             
-            btn.classList.add('speaking');
-            btn.innerHTML = '🔇';
+            if (btn) {
+                btn.classList.add('speaking');
+                btn.innerHTML = '🔇';
+            }
             
             utterance.onend = () => {
-                btn.classList.remove('speaking');
-                btn.innerHTML = '🔊';
+                if (btn) {
+                    btn.classList.remove('speaking');
+                    btn.innerHTML = '🔊';
+                }
             };
             
             speechSynthesis.speak(utterance);
