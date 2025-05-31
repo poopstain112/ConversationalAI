@@ -395,7 +395,11 @@ app.get('/', (req, res) => {
             }
             
             messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Improved auto-scroll with delay
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 100);
         }
         
         // Copy message function
@@ -454,13 +458,20 @@ app.get('/', (req, res) => {
         // Clear chat
         function clearChat() {
             fetch('/api/conversation/default/clear', { method: 'POST' });
-            document.getElementById('messages').innerHTML = 
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = 
                 '<div class="message assistant">' +
-                '<strong>Valor:</strong> Chat cleared. How can I help you?' +
+                'Chat cleared. How can I help you?' +
                 '<div class="message-actions">' +
                 '<button onclick="copyMessage(this)">📋 Copy</button>' +
                 '<button onclick="speakMessage(this)">🔊 Speak</button>' +
                 '</div></div>';
+            
+            // Auto-scroll after clearing
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 100);
+            
             toggleDropdown();
         }
         
@@ -510,9 +521,35 @@ app.get('/', (req, res) => {
             }
         });
         
-        // Focus input on load
+        // Initialize on load
         window.addEventListener('load', function() {
             document.getElementById('messageInput').focus();
+            
+            // Ensure proper auto-scroll on page load
+            const messagesDiv = document.getElementById('messages');
+            if (messagesDiv) {
+                setTimeout(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }, 200);
+            }
+        });
+        
+        // Also add scroll behavior to the messages container
+        const observer = new MutationObserver(function(mutations) {
+            const messagesDiv = document.getElementById('messages');
+            if (messagesDiv && mutations.length > 0) {
+                setTimeout(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }, 50);
+            }
+        });
+        
+        // Start observing when page loads
+        window.addEventListener('load', function() {
+            const messagesDiv = document.getElementById('messages');
+            if (messagesDiv) {
+                observer.observe(messagesDiv, { childList: true });
+            }
         });
     </script>
 </body>
