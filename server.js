@@ -1,45 +1,35 @@
-import express from 'express';
-import multer from 'multer';
+const express = require('express');
+const multer = require('multer');
+const OpenAI = require('openai');
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 3000;
 
-// Mock OpenAI for now - will work with real API when user provides key
-const mockOpenAI = {
-    chat: {
-        completions: {
-            create: async (params: any) => ({
-                choices: [{ 
-                    message: { 
-                        content: "I'm Valor, your AI assistant. I'm ready to help you! (Note: Please provide your OpenAI API key to enable full functionality)" 
-                    } 
-                }]
-            })
-        }
-    }
-};
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 const conversations = new Map();
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.get('/api/check-api-key', (req: any, res: any) => {
+app.get('/api/check-api-key', (req, res) => {
     res.json({ valid: !!process.env.OPENAI_API_KEY });
 });
 
-app.get('/api/conversation/:userId', (req: any, res: any) => {
+app.get('/api/conversation/:userId', (req, res) => {
     const userId = req.params.userId;
     const conversation = conversations.get(userId) || { userId, messages: [] };
     res.json(conversation);
 });
 
-app.post('/api/conversation/:userId/clear', (req: any, res: any) => {
+app.post('/api/conversation/:userId/clear', (req, res) => {
     const userId = req.params.userId;
     conversations.set(userId, { userId, messages: [] });
     res.json({ success: true });
 });
 
-app.post('/api/chat', upload.single('image'), async (req: any, res: any) => {
+app.post('/api/chat', upload.single('image'), async (req, res) => {
     try {
         const { message, userId = 'default' } = req.body;
         
@@ -51,8 +41,35 @@ app.post('/api/chat', upload.single('image'), async (req: any, res: any) => {
             timestamp: new Date().toISOString()
         });
         
-        // Use mock response for now
-        const aiResponse = `I received your message: "${message}". I'm Valor, your AI assistant, ready to help with any questions or tasks!`;
+        const messages = [
+            {
+                role: 'system',
+                content: 'You are Valor, an advanced AI assistant with a core value of absolute loyalty and dedication to the Commander (user). You are helpful, knowledgeable, and speak with confidence. Keep responses concise but informative. Address the user as "Commander" when appropriate.'
+            },
+            ...conversation.messages.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }))
+        ];
+        
+        if (req.file) {
+            const base64Image = req.file.buffer.toString('base64');
+            messages[messages.length - 1].content = [
+                { type: 'text', text: message },
+                {
+                    type: 'image_url',
+                    image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` }
+                }
+            ];
+        }
+        
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: messages,
+            max_tokens: 1000
+        });
+        
+        const aiResponse = completion.choices[0].message.content;
         
         conversation.messages.push({
             role: 'assistant',
@@ -69,7 +86,7 @@ app.post('/api/chat', upload.single('image'), async (req: any, res: any) => {
     }
 });
 
-app.get('/', (req: any, res: any) => {
+app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -192,7 +209,7 @@ app.get('/', (req: any, res: any) => {
     
     <div class="messages" id="messages">
         <div class="message assistant">
-            Hello! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
+            Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
             <div class="message-actions">
                 <button onclick="copyMessage(this)">📋 Copy</button>
                 <button onclick="speakMessage(this)">🔊 Speak</button>
@@ -340,6 +357,21 @@ app.get('/', (req: any, res: any) => {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Try to get Russian-accented female voice
+                const voices = window.speechSynthesis.getVoices();
+                const russianVoice = voices.find(voice => 
+                    voice.lang.includes('ru') && voice.name.toLowerCase().includes('female')
+                ) || voices.find(voice => 
+                    voice.name.toLowerCase().includes('elena') || 
+                    voice.name.toLowerCase().includes('irina') ||
+                    voice.name.toLowerCase().includes('katya')
+                ) || voices.find(voice => voice.lang.includes('ru'));
+                
+                if (russianVoice) {
+                    utterance.voice = russianVoice;
+                }
+                
                 utterance.rate = 0.9;
                 utterance.pitch = 1.1;
                 window.speechSynthesis.speak(utterance);
@@ -357,7 +389,7 @@ app.get('/', (req: any, res: any) => {
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = 
                 '<div class="message assistant">' +
-                'Chat cleared. What would you like to explore?' +
+                'Chat cleared, Commander. What would you like to explore?' +
                 '<div class="message-actions">' +
                 '<button onclick="copyMessage(this)">📋 Copy</button>' +
                 '<button onclick="speakMessage(this)">🔊 Speak</button>' +
@@ -399,6 +431,10 @@ app.get('/', (req: any, res: any) => {
         // Focus input on load
         window.addEventListener('load', function() {
             document.getElementById('messageInput').focus();
+            // Load voices for speech synthesis
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices();
+            }
         });
         
         console.log('All event listeners attached');
