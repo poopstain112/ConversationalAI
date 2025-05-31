@@ -6,7 +6,7 @@ const path = require('path');
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
 const openai = new OpenAI({
@@ -42,6 +42,44 @@ app.post('/api/chat', async (req, res) => {
     } catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ error: 'Failed to process message' });
+    }
+});
+
+// Image analysis endpoint
+app.post('/api/analyze-image', async (req, res) => {
+    try {
+        const { image } = req.body;
+        
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are Valor, an advanced AI assistant with superior visual analysis capabilities. Analyze images with military precision and provide detailed, tactical assessments. Focus on identifying objects, people, locations, potential threats, opportunities, and actionable intelligence."
+                },
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "Commander, analyze this image and provide a detailed tactical assessment. What do you see?"
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${image}`
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 1000
+        });
+        
+        res.json({ analysis: completion.choices[0].message.content });
+    } catch (error) {
+        console.error('Image analysis error:', error);
+        res.status(500).json({ error: 'Failed to analyze image' });
     }
 });
 
