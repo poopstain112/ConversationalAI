@@ -165,9 +165,10 @@ app.get('/', (req, res) => {
         .typing { opacity: 0.7; font-style: italic; }
         .file-input { display: none; }
         .file-button, .camera-button, .voice-button { 
-            padding: 1rem; border-radius: 50%; border: none;
+            padding: 0.75rem; border-radius: 50%; border: none;
             background: rgba(255,255,255,0.1); color: #fff; cursor: pointer;
-            transition: all 0.3s ease; font-size: 1.2rem;
+            transition: all 0.3s ease; font-size: 1rem;
+            width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
         }
         .file-button:hover, .camera-button:hover, .voice-button:hover { 
             background: rgba(255,255,255,0.2); 
@@ -263,7 +264,7 @@ app.get('/', (req, res) => {
         </div>
         <div class="input-area">
             <input type="file" id="fileInput" class="file-input" accept="image/*" onchange="handleFileUpload(event)">
-            <button type="button" class="file-button" onclick="document.getElementById('fileInput').click()" title="Upload Image">📁</button>
+            <button type="button" class="file-button" onclick="document.getElementById('fileInput').click()" title="Upload Image">📎</button>
             <input type="text" id="messageInput" placeholder="Type your message to Valor..." onkeypress="if(event.key==='Enter') sendMessage()">
             <button id="sendButton" onclick="sendMessage()">Send</button>
         </div>
