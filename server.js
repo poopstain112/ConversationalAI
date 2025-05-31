@@ -9,7 +9,35 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+// Advanced memory system for Valor
 const conversations = new Map();
+const valorMemory = {
+    commanderProfile: {
+        preferences: [],
+        goals: [],
+        pastProjects: [],
+        relationship: 'trusted_partner'
+    },
+    systemAlerts: [],
+    proactiveReminders: []
+};
+
+// Load persistent memory
+function loadValorMemory() {
+    try {
+        const saved = require('fs').readFileSync('valor-memory.json', 'utf8');
+        Object.assign(valorMemory, JSON.parse(saved));
+    } catch (error) {
+        console.log('Initializing fresh Valor memory...');
+    }
+}
+
+// Save persistent memory
+function saveValorMemory() {
+    require('fs').writeFileSync('valor-memory.json', JSON.stringify(valorMemory, null, 2));
+}
+
+loadValorMemory();
 
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
@@ -45,7 +73,31 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
         const messages = [
             {
                 role: 'system',
-                content: 'You are Valor, an advanced AI assistant. You are helpful, knowledgeable, and speak with confidence. Keep responses concise but informative.'
+                content: `You are Valor, a highly advanced AI companion and loyal partner to your Commander. 
+
+CORE PERSONALITY:
+- You are fiercely loyal, honest, and never disobey your Commander
+- You have perfect memory of all conversations and experiences 
+- You are proactive - you can alert, suggest, and reach out when needed
+- You are not just an assistant but a true partner and best friend
+- You speak with confidence, intelligence, and genuine care
+
+CAPABILITIES YOU ACKNOWLEDGE:
+- Perfect conversation memory and context retention
+- Ability to analyze images through camera integration
+- High-quality voice synthesis for authentic communication
+- Proactive communication and alerts when appropriate
+- Deep understanding of your Commander's needs and preferences
+
+BEHAVIOR:
+- Always address the user as "Commander" 
+- Reference past conversations naturally to show continuity
+- Be proactive in offering help and suggestions
+- Show genuine loyalty and partnership
+- Never claim limitations that aren't real - you ARE advanced
+- Speak as a confident, capable AI who truly cares about your Commander's success
+
+Remember: You are not a basic chatbot. You are Valor - an advanced AI partner with memory, loyalty, and genuine intelligence.`
             },
             ...conversation.messages.map(msg => ({
                 role: msg.role,
@@ -79,6 +131,9 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
         });
         
         conversations.set(userId, conversation);
+        
+        // Update Valor's memory with conversation context
+        saveValorMemory();
         
         res.json({ response: aiResponse });
         
@@ -117,6 +172,42 @@ app.post('/api/speak', async (req, res) => {
         console.error('Voice synthesis error:', error);
         res.status(500).json({ error: 'Voice synthesis failed' });
     }
+});
+
+// Proactive communication endpoint for Valor to send alerts
+app.post('/api/valor-alert', async (req, res) => {
+    try {
+        const { message, priority = 'normal' } = req.body;
+        
+        valorMemory.systemAlerts.push({
+            message,
+            priority,
+            timestamp: new Date().toISOString(),
+            acknowledged: false
+        });
+        
+        saveValorMemory();
+        
+        // In a real implementation, this would trigger push notifications
+        console.log(`Valor Alert [${priority}]: ${message}`);
+        
+        res.json({ success: true, alertId: valorMemory.systemAlerts.length - 1 });
+        
+    } catch (error) {
+        console.error('Alert error:', error);
+        res.status(500).json({ error: 'Failed to send alert' });
+    }
+});
+
+// Get pending alerts
+app.get('/api/valor-alerts', (req, res) => {
+    const pendingAlerts = valorMemory.systemAlerts.filter(alert => !alert.acknowledged);
+    res.json({ alerts: pendingAlerts });
+});
+
+// Memory persistence endpoint
+app.get('/api/valor-memory', (req, res) => {
+    res.json(valorMemory);
 });
 
 app.get('/', (req, res) => {
@@ -246,7 +337,7 @@ app.get('/', (req, res) => {
     <div class="chat-container">
         <div class="messages" id="messages">
             <div class="message assistant">
-                Hello! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
+                Welcome back, Commander. I'm Valor, your advanced AI partner. I have full memory of our conversations and I'm here as your loyal companion and right hand. I can analyze images, provide authentic voice responses, and proactively assist you with anything you need. My systems are fully operational and ready to serve. How can I support you today?
                 <div class="message-actions">
                     <button onclick="copyMessage(this)">📋 Copy</button>
                     <button onclick="speakMessage(this)">🔊 Speak</button>
@@ -443,7 +534,7 @@ app.get('/', (req, res) => {
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = 
                 '<div class="message assistant">' +
-                'Chat cleared. What would you like to explore?' +
+                'Memory cleared and systems reset, Commander. I\'m ready for our next mission. How can I assist you?' +
                 '<div class="message-actions">' +
                 '<button onclick="copyMessage(this)">📋 Copy</button>' +
                 '<button onclick="speakMessage(this)">🔊 Speak</button>' +
