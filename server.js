@@ -1,13 +1,11 @@
 const express = require('express');
-const multer = require('multer');
 const { OpenAI } = require('openai');
 const path = require('path');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
 
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static('public'));
+app.use(express.static('.'));
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -22,26 +20,38 @@ app.get('/', (req, res) => {
 app.post('/api/chat', async (req, res) => {
     try {
         const { message } = req.body;
+        console.log('Received message:', message);
+        
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error('OpenAI API key not configured');
+        }
         
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: "You are Valor, an advanced AI assistant created for a Commander. You are intelligent, helpful, and slightly military in tone. Provide detailed, useful responses."
+                    content: "You are Valor, an advanced AI assistant created for a Commander. You are intelligent, helpful, and slightly military in tone. Provide detailed, useful responses with confidence and authority."
                 },
                 {
                     role: "user", 
                     content: message
                 }
             ],
-            max_tokens: 1000
+            max_tokens: 1000,
+            temperature: 0.7
         });
         
-        res.json({ response: completion.choices[0].message.content });
+        const response = completion.choices[0].message.content;
+        console.log('AI response generated successfully');
+        
+        res.json({ response: response });
     } catch (error) {
         console.error('Chat error:', error);
-        res.status(500).json({ error: 'Failed to process message' });
+        res.status(500).json({ 
+            error: 'Failed to process message', 
+            details: error.message 
+        });
     }
 });
 
@@ -49,6 +59,10 @@ app.post('/api/chat', async (req, res) => {
 app.post('/api/analyze-image', async (req, res) => {
     try {
         const { image } = req.body;
+        
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error('OpenAI API key not configured');
+        }
         
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
@@ -87,6 +101,10 @@ app.post('/api/analyze-image', async (req, res) => {
 app.post('/api/gcode', async (req, res) => {
     try {
         const { description } = req.body;
+        
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error('OpenAI API key not configured');
+        }
         
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
