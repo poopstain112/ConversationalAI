@@ -35,6 +35,19 @@
             gap: 16px;
         }
         
+        .message-wrapper {
+            width: 100%;
+            display: flex;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .message-wrapper.user {
+            justify-content: flex-end;
+        }
+        .message-wrapper.assistant {
+            justify-content: flex-start;
+        }
+        
         .message { 
             max-width: 80%; 
             word-wrap: break-word; 
@@ -42,22 +55,58 @@
             line-height: 1.4;
             padding: 12px 16px;
             border-radius: 18px;
-            clear: both;
+            position: relative;
         }
         .message.user { 
             background: #007AFF; 
             color: white; 
-            margin-left: auto;
-            float: right;
-            clear: both;
         }
         .message.assistant { 
             background: white; 
             border: 1px solid #e5e5e7; 
             color: #333;
-            margin-right: auto;
-            float: left;
-            clear: both;
+        }
+        
+        .message-controls {
+            display: none;
+            position: absolute;
+            bottom: -30px;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e5e7;
+            border-radius: 16px;
+            padding: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .message-wrapper.assistant .message-controls {
+            left: 0;
+            right: auto;
+        }
+        .message-wrapper:hover .message-controls {
+            display: flex;
+        }
+        
+        .control-btn {
+            background: none;
+            border: none;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 6px;
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+        .control-btn:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+        .control-btn:active {
+            background: #e5e5e5;
         }
         
         .input-container { 
@@ -195,22 +244,24 @@
             clear: both;
         }
         
-        .message-wrapper {
-            width: 100%;
-            display: flex;
-            margin-bottom: 16px;
-        }
-        .message-wrapper.user {
-            justify-content: flex-end;
-        }
-        .message-wrapper.assistant {
-            justify-content: flex-start;
-        }
-        
         .image-message {
             max-width: 200px;
             border-radius: 12px;
             margin-bottom: 8px;
+        }
+        
+        .copy-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 3000;
+            display: none;
         }
     </style>
 </head>
@@ -257,6 +308,7 @@
         </div>
     </div>
     
+    <div class="copy-feedback" id="copyFeedback">Copied!</div>
     <canvas id="captureCanvas" style="display: none;"></canvas>
 
     <script>
@@ -266,7 +318,62 @@
         let continuousInterval = null;
         let cameraMode = false;
         let cameraStream = null;
-        let facingMode = 'environment'; // Start with back camera
+        let facingMode = 'environment';
+        
+        // Speech synthesis for text-to-speech
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                // Stop any current speech
+                speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 0.8;
+                utterance.volume = 0.8;
+                
+                // Try to find a female voice
+                const voices = speechSynthesis.getVoices();
+                const femaleVoice = voices.find(voice => 
+                    voice.name.toLowerCase().includes('female') || 
+                    voice.name.toLowerCase().includes('woman') ||
+                    voice.gender === 'female'
+                );
+                
+                if (femaleVoice) {
+                    utterance.voice = femaleVoice;
+                }
+                
+                speechSynthesis.speak(utterance);
+            } else {
+                alert('Text-to-speech not supported in this browser');
+            }
+        }
+        
+        // Copy text to clipboard
+        async function copyText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showCopyFeedback();
+            } catch (error) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showCopyFeedback();
+            }
+        }
+        
+        function showCopyFeedback() {
+            const feedback = document.getElementById('copyFeedback');
+            feedback.style.display = 'block';
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 1500);
+        }
         
         // Chat persistence functions
         function saveChatHistory() {
@@ -275,7 +382,7 @@
             
             messageElements.forEach(wrapper => {
                 const messageDiv = wrapper.querySelector('.message');
-                if (messageDiv) {
+                if (messageDiv && !messageDiv.classList.contains('typing-indicator')) {
                     messages.push({
                         role: messageDiv.classList.contains('user') ? 'user' : 'assistant',
                         content: messageDiv.textContent
@@ -316,7 +423,7 @@
             addMessage(welcomeMessage, 'assistant');
         }
         
-        // Camera functions
+        // Camera functions (same as before)
         function toggleCamera() {
             cameraMode = !cameraMode;
             const indicator = document.getElementById('cameraIndicator');
@@ -404,11 +511,9 @@
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             const base64Image = imageData.split(',')[1];
             
-            // Show captured image in chat
             addImageMessage(imageData, 'user');
             addMessage("Analyze this image", 'user');
             
-            // Send for analysis
             await analyzeImage(base64Image);
         }
         
@@ -453,7 +558,6 @@
             scrollToBottom();
         }
         
-        // Voice command processing
         function processVoiceCommand(command) {
             const lowerCommand = command.toLowerCase();
             
@@ -466,7 +570,6 @@
             }
         }
         
-        // Auto-resize textarea
         function setupTextarea() {
             const textarea = document.getElementById('messageInput');
             
@@ -578,7 +681,6 @@
             
             if (!message) return;
             
-            // Check for voice commands
             processVoiceCommand(message);
             
             addMessage(message, 'user');
@@ -640,6 +742,28 @@
             messageDiv.className = `message ${role}`;
             messageDiv.textContent = text;
             
+            // Add message controls for assistant messages
+            if (role === 'assistant') {
+                const controls = document.createElement('div');
+                controls.className = 'message-controls';
+                
+                const speakBtn = document.createElement('button');
+                speakBtn.className = 'control-btn';
+                speakBtn.innerHTML = '🔊';
+                speakBtn.title = 'Speak';
+                speakBtn.onclick = () => speakText(text);
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'control-btn';
+                copyBtn.innerHTML = '📋';
+                copyBtn.title = 'Copy';
+                copyBtn.onclick = () => copyText(text);
+                
+                controls.appendChild(speakBtn);
+                controls.appendChild(copyBtn);
+                wrapper.appendChild(controls);
+            }
+            
             wrapper.appendChild(messageDiv);
             container.appendChild(wrapper);
             
@@ -684,7 +808,6 @@
             }, 10);
         }
         
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const dropdown = document.getElementById('dropdown');
             const menuBtn = document.querySelector('.menu-btn');
@@ -694,11 +817,10 @@
             }
         });
         
-        // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             setupTextarea();
             loadChatHistory();
-            console.log('Valor AI with camera vision initialized successfully');
+            console.log('Valor AI with message controls initialized successfully');
         });
         
         console.log('All event listeners attached');
