@@ -25,9 +25,9 @@
         .send-btn { background: #007AFF; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
         .send-btn:disabled { background: #c7c7cc; cursor: not-allowed; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; }
-        .modal-content { background: white; margin: 50px auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 12px; }
-        .modal-header { display: flex; justify-content: between; align-items: center; margin-bottom: 20px; }
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; float: right; }
+        .modal-content { background: white; margin: 20px auto; padding: 20px; width: 95%; max-width: 500px; border-radius: 12px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
         .form-group { margin-bottom: 16px; }
         .form-label { display: block; margin-bottom: 8px; font-weight: 600; }
         .form-input { width: 100%; padding: 12px; border: 1px solid #d1d1d6; border-radius: 8px; }
@@ -37,6 +37,9 @@
         .code-output { background: #f5f5f5; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
         .continuous-mode { background: #ff6b6b; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; margin-left: auto; }
         .continuous-mode.active { background: #51cf66; }
+        .camera-preview { width: 100%; max-width: 400px; border-radius: 8px; margin: 16px 0; }
+        .camera-controls { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
+        .analysis-result { background: #f0f8ff; padding: 16px; border-radius: 8px; margin-top: 16px; }
     </style>
 </head>
 <body>
@@ -46,7 +49,7 @@
         <button class="menu-btn" onclick="toggleMenu()">⋯</button>
         <div class="dropdown" id="dropdown">
             <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
-            <div class="dropdown-item" onclick="openCamera()">📷 Camera</div>
+            <div class="dropdown-item" onclick="openCameraModal()">📷 Camera</div>
             <div class="dropdown-item" onclick="connectBluetooth()">🔵 Bluetooth</div>
             <div class="dropdown-item" onclick="toggleVoice()">🎤 Voice Mode</div>
             <div class="dropdown-item" onclick="openGcodeModal()">⚙️ G-Code Generator</div>
@@ -58,7 +61,7 @@
     
     <div class="chat-container" id="chatContainer">
         <div class="message assistant">
-            Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, creative writing, G-code generation, and much more. What would you like to explore today?
+            Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, creative writing, G-code generation, and much more. Use the camera to show me what you're seeing and I'll analyze it for you!
         </div>
     </div>
     
@@ -66,6 +69,24 @@
         <div class="input-row">
             <input type="text" class="input-field" id="messageInput" placeholder="Ask anything..." onkeypress="handleKeyPress(event)">
             <button class="send-btn" id="sendBtn" onclick="sendMessage()">→</button>
+        </div>
+    </div>
+
+    <!-- Camera Modal -->
+    <div class="modal" id="cameraModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Camera Analysis</h3>
+                <button class="close-btn" onclick="closeCameraModal()">&times;</button>
+            </div>
+            <video class="camera-preview" id="cameraPreview" autoplay playsinline></video>
+            <canvas id="captureCanvas" style="display: none;"></canvas>
+            <div class="camera-controls">
+                <button class="btn" id="startCameraBtn" onclick="startCamera()">Start Camera</button>
+                <button class="btn" id="captureBtn" onclick="captureImage()" style="display: none;">Capture & Analyze</button>
+                <button class="btn" onclick="stopCamera()">Stop</button>
+            </div>
+            <div id="analysisResult" class="analysis-result" style="display: none;"></div>
         </div>
     </div>
 
@@ -95,6 +116,7 @@
         
         let continuousMode = false;
         let continuousInterval = null;
+        let cameraStream = null;
         
         function toggleMenu() {
             const dropdown = document.getElementById('dropdown');
@@ -107,9 +129,86 @@
             scrollToBottom();
         }
         
-        function openCamera() {
-            alert('Camera access will be implemented in the next update!');
+        function openCameraModal() {
+            document.getElementById('cameraModal').style.display = 'block';
             toggleMenu();
+        }
+        
+        function closeCameraModal() {
+            document.getElementById('cameraModal').style.display = 'none';
+            stopCamera();
+        }
+        
+        async function startCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: 'environment', // Use back camera
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('cameraPreview');
+                video.srcObject = cameraStream;
+                
+                document.getElementById('startCameraBtn').style.display = 'none';
+                document.getElementById('captureBtn').style.display = 'inline-block';
+                
+            } catch (error) {
+                alert('Camera access denied or not available. Please allow camera permissions.');
+                console.error('Camera error:', error);
+            }
+        }
+        
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            
+            document.getElementById('startCameraBtn').style.display = 'inline-block';
+            document.getElementById('captureBtn').style.display = 'none';
+            document.getElementById('analysisResult').style.display = 'none';
+        }
+        
+        async function captureImage() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.getElementById('captureCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            const base64Image = imageData.split(',')[1];
+            
+            document.getElementById('captureBtn').disabled = true;
+            document.getElementById('captureBtn').textContent = 'Analyzing...';
+            
+            try {
+                const response = await fetch('/api/analyze-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image })
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('analysisResult').style.display = 'block';
+                document.getElementById('analysisResult').innerHTML = '<h4>Valor's Analysis:</h4><p>' + data.analysis + '</p>';
+                
+                addMessage('Analyze this image', 'user');
+                addMessage(data.analysis, 'assistant');
+                
+            } catch (error) {
+                alert('Image analysis failed. Please try again.');
+            }
+            
+            document.getElementById('captureBtn').disabled = false;
+            document.getElementById('captureBtn').textContent = 'Capture & Analyze';
         }
         
         function connectBluetooth() {
@@ -162,7 +261,7 @@
                 addMessage(prompt, 'user');
                 sendAIMessage(prompt);
                 index++;
-            }, 10000); // Every 10 seconds
+            }, 10000);
         }
         
         function stopContinuousMode() {
@@ -300,11 +399,16 @@
             }
         });
         
-        // Close modal when clicking outside
+        // Close modals when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('gcodeModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
+            const cameraModal = document.getElementById('cameraModal');
+            const gcodeModal = document.getElementById('gcodeModal');
+            
+            if (event.target === cameraModal) {
+                closeCameraModal();
+            }
+            if (event.target === gcodeModal) {
+                closeGcodeModal();
             }
         }
         
