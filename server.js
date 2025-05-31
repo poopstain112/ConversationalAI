@@ -377,8 +377,13 @@ app.get('/', (req, res) => {
             
             messagesDiv.appendChild(messageDiv);
             
-            // Fixed auto-scroll
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            // Enhanced auto-scroll with multiple attempts
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                requestAnimationFrame(() => {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+            }, 10);
         }
         
         function copyMessage(button) {
@@ -486,8 +491,19 @@ app.get('/', (req, res) => {
         window.addEventListener('load', function() {
             document.getElementById('messageInput').focus();
             const messagesDiv = document.getElementById('messages');
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 100);
         });
+        
+        // Add scroll observer for better reliability
+        if (window.ResizeObserver) {
+            const messagesDiv = document.getElementById('messages');
+            const resizeObserver = new ResizeObserver(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+            resizeObserver.observe(messagesDiv);
+        }
         
         // Auto-resize textarea
         const textarea = document.getElementById('messageInput');
