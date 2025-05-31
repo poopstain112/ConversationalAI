@@ -93,62 +93,33 @@ app.get('/', (req, res) => {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valor AI</title>
-    <meta name="theme-color" content="#ffffff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #ffffff; color: #374151; 
-            height: 100vh; overflow: hidden; position: relative;
+            background: #f7f7f8; height: 100vh; overflow: hidden;
         }
         
         .header {
-            background: #ffffff; padding: 0.75rem 1rem;
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 100;
+            background: #fff; padding: 1rem; display: flex; align-items: center; 
+            justify-content: space-between; border-bottom: 1px solid #e5e7eb;
         }
         
-        .header-left {
-            display: flex; align-items: center; gap: 0.75rem;
-        }
-        
-        .menu-icon {
-            font-size: 1.25rem; color: #374151; cursor: pointer;
-            padding: 0.5rem; border-radius: 0.5rem; transition: background 0.2s;
-        }
-        .menu-icon:hover { background: #f3f4f6; }
-        
-        .logo {
-            font-size: 1.125rem; font-weight: 600; color: #374151;
-        }
-        
-        .header-right {
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        
-        .new-chat-btn {
-            background: none; border: none; color: #374151; font-size: 1.125rem;
-            cursor: pointer; padding: 0.5rem; border-radius: 0.5rem;
-            transition: background 0.2s;
-        }
-        .new-chat-btn:hover { background: #f3f4f6; }
+        .logo { font-size: 1.25rem; font-weight: 600; color: #111827; }
         
         .menu-btn {
-            background: none; border: none; color: #374151; 
-            font-size: 1.125rem; cursor: pointer; padding: 0.5rem;
-            border-radius: 0.5rem; transition: background 0.2s;
+            background: none; border: none; color: #374151; font-size: 1.25rem;
+            cursor: pointer; padding: 0.5rem; border-radius: 0.375rem;
+            transition: background 0.2s;
         }
         .menu-btn:hover { background: #f3f4f6; }
         
         .dropdown {
-            position: absolute; top: calc(100% + 0.5rem); right: 1rem; 
-            background: #ffffff; border-radius: 0.5rem; min-width: 12rem; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            display: none; z-index: 2000; border: 1px solid #e5e7eb;
+            position: absolute; top: 100%; right: 1rem; background: #fff;
+            border-radius: 0.5rem; min-width: 10rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: none; z-index: 1000; border: 1px solid #e5e7eb;
         }
         .dropdown.show { display: block; }
         
@@ -159,115 +130,83 @@ app.get('/', (req, res) => {
         .dropdown-item:hover { background: #f3f4f6; }
         
         .chat-container { 
-            height: calc(100vh - 4rem); display: flex; flex-direction: column;
-            background: #ffffff;
+            height: calc(100vh - 10rem); display: flex; flex-direction: column;
         }
         
         .messages { 
             flex: 1; padding: 1rem; overflow-y: auto; display: flex; 
-            flex-direction: column; gap: 1rem; max-width: 48rem; margin: 0 auto; width: 100%;
+            flex-direction: column; gap: 1rem;
         }
         
-        .messages::-webkit-scrollbar { width: 4px; }
-        .messages::-webkit-scrollbar-track { background: transparent; }
-        .messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-        
         .message { 
-            padding: 0.75rem 1rem; border-radius: 0.75rem; position: relative;
-            word-wrap: break-word; line-height: 1.6; font-size: 0.875rem;
-            max-width: 100%;
+            padding: 1rem; border-radius: 0.75rem; word-wrap: break-word; 
+            line-height: 1.5; max-width: 80%;
         }
         
         .message.user { 
-            align-self: flex-end; background: #f3f4f6; color: #374151;
-            max-width: 70%; margin-left: auto;
+            align-self: flex-end; background: #e5e7eb; color: #111827;
         }
         
         .message.assistant { 
-            align-self: flex-start; background: transparent; color: #374151;
-            max-width: 100%; padding-left: 0; padding-right: 0;
+            align-self: flex-start; background: #fff; color: #111827;
+            border: 1px solid #e5e7eb;
         }
         
         .message-actions {
-            display: flex; gap: 0.5rem; margin-top: 0.75rem; opacity: 0.6;
+            display: flex; gap: 0.5rem; margin-top: 0.75rem; opacity: 0.7;
         }
         
         .message-actions button {
             background: #f3f4f6; border: none; color: #6b7280;
-            padding: 0.375rem 0.5rem; border-radius: 0.375rem; cursor: pointer;
-            font-size: 0.75rem; transition: all 0.2s; display: flex;
-            align-items: center; gap: 0.25rem;
+            padding: 0.375rem 0.75rem; border-radius: 0.375rem; cursor: pointer;
+            font-size: 0.75rem; transition: all 0.2s;
         }
-        
-        .message-actions button:hover {
-            background: #e5e7eb; color: #374151;
-        }
+        .message-actions button:hover { background: #e5e7eb; color: #374151; }
         
         .input-area { 
-            padding: 1rem; background: #ffffff; border-top: 1px solid #e5e7eb;
-            position: sticky; bottom: 0; z-index: 50;
+            padding: 1rem; background: #fff; border-top: 1px solid #e5e7eb;
         }
         
         .input-container { 
             display: flex; gap: 0.5rem; align-items: flex-end;
-            background: #ffffff; border-radius: 1.5rem; padding: 0.5rem;
-            border: 1px solid #d1d5db; max-width: 48rem; margin: 0 auto;
+            background: #f9fafb; border-radius: 1.5rem; padding: 0.5rem;
+            border: 1px solid #d1d5db;
         }
         
         .file-upload { 
-            background: #f3f4f6; border: none; color: #6b7280; border-radius: 50%;
-            width: 2rem; height: 2rem; display: flex; 
-            align-items: center; justify-content: center; cursor: pointer; 
-            transition: all 0.2s; font-size: 0.875rem; flex-shrink: 0;
+            background: #e5e7eb; border: none; color: #6b7280; 
+            width: 2.5rem; height: 2.5rem; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.2s; flex-shrink: 0;
         }
-        .file-upload:hover { background: #e5e7eb; }
+        .file-upload:hover { background: #d1d5db; }
         
         .message-input { 
-            flex: 1; background: transparent; border: none; color: #374151; 
-            padding: 0.5rem 0.75rem; border-radius: 1rem; outline: none;
-            resize: none; min-height: 2rem; max-height: 8rem; font-size: 1rem;
-            line-height: 1.5;
+            flex: 1; background: transparent; border: none; color: #111827; 
+            padding: 0.75rem; outline: none; resize: none; 
+            min-height: 2.5rem; max-height: 8rem; font-size: 1rem;
         }
         .message-input::placeholder { color: #9ca3af; }
         
         .send-button { 
-            background: #000000; border: none; color: #ffffff; 
-            width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s; flex-shrink: 0; font-size: 0.875rem;
+            background: #111827; border: none; color: #fff; 
+            width: 2.5rem; height: 2.5rem; border-radius: 50%;
+            cursor: pointer; display: flex; align-items: center; 
+            justify-content: center; transition: background 0.2s; flex-shrink: 0;
         }
         .send-button:hover { background: #374151; }
-        .send-button:disabled { opacity: 0.5; cursor: not-allowed; background: #9ca3af; }
-        
-        @media (max-width: 768px) {
-            .chat-container { height: calc(100vh - 3.5rem); }
-            .header { padding: 0.5rem 1rem; }
-            .messages { padding: 0.75rem; gap: 0.75rem; }
-            .message { font-size: 0.875rem; }
-            .input-area { padding: 0.75rem; }
-        }
-        
-        @media (max-height: 600px) {
-            .chat-container { height: calc(100vh - 3rem); }
-            .header { padding: 0.375rem 1rem; }
-        }
+        .send-button:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="header-left">
-            <div class="menu-icon">☰</div>
-            <div class="logo">Valor AI</div>
-        </div>
-        <div class="header-right">
-            <button class="new-chat-btn" onclick="clearChat()" title="New Chat">✏️</button>
-            <div style="position: relative;">
-                <button class="menu-btn" onclick="toggleMenu()">⋮</button>
-                <div class="dropdown" id="dropdown">
-                    <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
-                    <div class="dropdown-item" onclick="checkStatus()">API Status</div>
-                    <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
-                </div>
+        <div class="logo">Valor AI</div>
+        <div style="position: relative;">
+            <button class="menu-btn" onclick="toggleMenu()">⋮</button>
+            <div class="dropdown" id="dropdown">
+                <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
+                <div class="dropdown-item" onclick="checkStatus()">API Status</div>
+                <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
             </div>
         </div>
     </div>
@@ -278,7 +217,7 @@ app.get('/', (req, res) => {
                 Hello! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
                 <div class="message-actions">
                     <button onclick="copyMessage(this)">📋 Copy</button>
-                    <button onclick="speakMessage(this)">🔊 Read</button>
+                    <button onclick="speakMessage(this)">🔊 Speak</button>
                 </div>
             </div>
         </div>
@@ -293,7 +232,6 @@ app.get('/', (req, res) => {
                 class="message-input" 
                 placeholder="Ask anything..."
                 onkeydown="handleKeyPress(event)"
-                rows="1"
             ></textarea>
             <button id="sendButton" class="send-button" onclick="sendMessage()">↑</button>
         </div>
@@ -371,24 +309,17 @@ app.get('/', (req, res) => {
                 messageDiv.innerHTML = content + 
                     '<div class="message-actions">' +
                     '<button onclick="copyMessage(this)">📋 Copy</button>' +
-                    '<button onclick="speakMessage(this)">🔊 Read</button>' +
+                    '<button onclick="speakMessage(this)">🔊 Speak</button>' +
                     '</div>';
             }
             
             messagesDiv.appendChild(messageDiv);
-            
-            // Enhanced auto-scroll with multiple attempts
-            setTimeout(() => {
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                requestAnimationFrame(() => {
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                });
-            }, 10);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
         
         function copyMessage(button) {
             const messageDiv = button.closest('.message');
-            const text = messageDiv.textContent.replace(/📋 Copy🔊 Read/g, '').trim();
+            const text = messageDiv.textContent.replace(/📋 Copy🔊 Speak/g, '').trim();
             
             navigator.clipboard.writeText(text).then(() => {
                 const originalText = button.innerHTML;
@@ -401,24 +332,11 @@ app.get('/', (req, res) => {
         
         function speakMessage(button) {
             const messageDiv = button.closest('.message');
-            const text = messageDiv.textContent.replace(/📋 Copy🔊 Read/g, '').trim();
+            const text = messageDiv.textContent.replace(/📋 Copy🔊 Speak/g, '').trim();
             
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                
-                const voices = window.speechSynthesis.getVoices();
-                const femaleVoice = voices.find(voice => 
-                    voice.lang.includes('en') && 
-                    (voice.name.toLowerCase().includes('female') || 
-                     voice.name.toLowerCase().includes('samantha') ||
-                     voice.name.toLowerCase().includes('karen'))
-                ) || voices.find(voice => voice.gender === 'female');
-                
-                if (femaleVoice) {
-                    utterance.voice = femaleVoice;
-                }
-                
                 utterance.rate = 0.9;
                 utterance.pitch = 1.1;
                 window.speechSynthesis.speak(utterance);
@@ -444,7 +362,7 @@ app.get('/', (req, res) => {
                 'Chat cleared. What would you like to explore?' +
                 '<div class="message-actions">' +
                 '<button onclick="copyMessage(this)">📋 Copy</button>' +
-                '<button onclick="speakMessage(this)">🔊 Read</button>' +
+                '<button onclick="speakMessage(this)">🔊 Speak</button>' +
                 '</div></div>';
             
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -467,7 +385,7 @@ app.get('/', (req, res) => {
             const messages = document.querySelectorAll('.message');
             let text = 'Valor AI Conversation Export\n\n';
             messages.forEach(msg => {
-                text += msg.textContent.replace(/📋 Copy🔊 Read/g, '').trim() + '\n\n';
+                text += msg.textContent.replace(/📋 Copy🔊 Speak/g, '').trim() + '\n\n';
             });
             
             const blob = new Blob([text], { type: 'text/plain' });
@@ -490,26 +408,6 @@ app.get('/', (req, res) => {
         
         window.addEventListener('load', function() {
             document.getElementById('messageInput').focus();
-            const messagesDiv = document.getElementById('messages');
-            setTimeout(() => {
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 100);
-        });
-        
-        // Add scroll observer for better reliability
-        if (window.ResizeObserver) {
-            const messagesDiv = document.getElementById('messages');
-            const resizeObserver = new ResizeObserver(() => {
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            });
-            resizeObserver.observe(messagesDiv);
-        }
-        
-        // Auto-resize textarea
-        const textarea = document.getElementById('messageInput');
-        textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 128) + 'px';
         });
     </script>
 </body>
