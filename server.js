@@ -48,6 +48,43 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
+app.post('/api/speak', async (req, res) => {
+    try {
+        const { text } = req.body;
+        
+        const response = await fetch('https://api.openai.com/v1/audio/speech', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'tts-1',
+                input: text,
+                voice: 'nova',
+                response_format: 'mp3'
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('TTS request failed');
+        }
+        
+        const audioBuffer = await response.arrayBuffer();
+        
+        res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': audioBuffer.byteLength
+        });
+        
+        res.send(Buffer.from(audioBuffer));
+        
+    } catch (error) {
+        console.error('TTS Error:', error);
+        res.status(500).json({ error: 'Text-to-speech failed' });
+    }
+});
+
 app.post('/api/analyze-image', async (req, res) => {
     try {
         const { image } = req.body;
@@ -101,5 +138,5 @@ app.post('/api/analyze-image', async (req, res) => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log('Valor AI with vision running on port ' + PORT);
+    console.log('Valor AI with high-quality voice running on port ' + PORT);
 });
