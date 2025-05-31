@@ -124,24 +124,29 @@ app.get('/', (req, res) => {
         }
         
         .header {
-            background: rgba(20,20,40,0.95); backdrop-filter: blur(20px);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 1rem; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
         }
         
-        .logo { font-size: 1.5rem; font-weight: bold; 
-            background: linear-gradient(45deg, #64ffda, #00bcd4);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        .logo { 
+            font-size: 1.5rem; font-weight: bold; color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .nav-menu { position: relative; }
         .menu-button { 
-            background: none; border: none; color: #fff; font-size: 1.2rem;
-            cursor: pointer; width: 40px; height: 40px;
+            background: rgba(255,255,255,0.2); border: none; color: #fff; 
+            font-size: 1.4rem; cursor: pointer; width: 44px; height: 44px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; transition: background 0.2s ease;
+            border-radius: 12px; transition: all 0.2s ease;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);
         }
-        .menu-button:hover { background: rgba(255,255,255,0.1); }
+        .menu-button:hover { 
+            background: rgba(255,255,255,0.3); transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
         
         .dropdown { 
             position: absolute; top: calc(100% + 0.5rem); right: 0; 
@@ -168,18 +173,19 @@ app.get('/', (req, res) => {
         }
         
         .message { 
-            max-width: 80%; padding: 1rem 1.5rem; border-radius: 18px; position: relative;
-            word-wrap: break-word; line-height: 1.5;
+            max-width: 85%; padding: 1.2rem 1.8rem; border-radius: 20px; position: relative;
+            word-wrap: break-word; line-height: 1.6; margin-bottom: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .message.user { 
             align-self: flex-end; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin-left: auto;
+            margin-left: auto; color: #fff;
         }
         
         .message.assistant { 
-            align-self: flex-start; background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+            align-self: flex-start; background: rgba(255,255,255,0.95);
+            color: #2c3e50; border: 1px solid rgba(255,255,255,0.3);
         }
         
         .message-actions {
@@ -187,13 +193,14 @@ app.get('/', (req, res) => {
         }
         
         .message-actions button {
-            background: rgba(255,255,255,0.2); border: none; color: #fff;
-            padding: 0.4rem 0.6rem; border-radius: 8px; cursor: pointer;
-            font-size: 0.9rem; transition: all 0.2s ease;
+            background: rgba(102,126,234,0.8); border: none; color: #fff;
+            padding: 0.5rem 0.8rem; border-radius: 10px; cursor: pointer;
+            font-size: 0.85rem; transition: all 0.2s ease; font-weight: 500;
         }
         
         .message-actions button:hover {
-            background: rgba(255,255,255,0.3); transform: translateY(-1px);
+            background: rgba(102,126,234,1); transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102,126,234,0.4);
         }
         
         .input-area { 
