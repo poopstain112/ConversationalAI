@@ -2,13 +2,13 @@
   "name": "valor-ai",
   "version": "1.0.0",
   "description": "Advanced AI Assistant",
-  "main": "server.js",
+  "main": "valor-server.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node valor-server.js",
+    "dev": "node valor-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
