@@ -201,6 +201,9 @@ app.get('/', (req, res) => {
             <button class="menu-btn" id="menuBtn">⋮</button>
             <div class="dropdown" id="dropdown">
                 <div class="dropdown-item" id="clearChat">Clear Chat</div>
+                <div class="dropdown-item" id="openCamera">📹 Camera</div>
+                <div class="dropdown-item" id="bluetoothConnect">🔵 Bluetooth</div>
+                <div class="dropdown-item" id="toggleVoiceMode">🎤 Voice Mode</div>
                 <div class="dropdown-item" id="checkStatus">API Status</div>
                 <div class="dropdown-item" id="exportChat">Export Chat</div>
             </div>
@@ -266,8 +269,14 @@ app.get('/', (req, res) => {
         
         // Menu items
         document.getElementById('clearChat').addEventListener('click', clearChat);
+        document.getElementById('openCamera').addEventListener('click', openCamera);
+        document.getElementById('bluetoothConnect').addEventListener('click', connectBluetooth);
+        document.getElementById('toggleVoiceMode').addEventListener('click', toggleVoiceMode);
         document.getElementById('checkStatus').addEventListener('click', checkStatus);
         document.getElementById('exportChat').addEventListener('click', exportChat);
+        
+        let voiceModeActive = false;
+        let recognition = null;
         
         async function sendMessage() {
             console.log('Send message called');
