@@ -1,11 +1,10 @@
 {
   "name": "valor-ai",
-  "version": "2.0.0",
-  "description": "Advanced AI companion with memory and loyalty",
+  "version": "1.0.0",
+  "description": "Valor AI - Elite Companion",
   "main": "valor-server.js",
   "scripts": {
-    "start": "node valor-server.js",
-    "dev": "node valor-server.js"
+    "start": "node valor-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
