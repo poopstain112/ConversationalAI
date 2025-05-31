@@ -106,14 +106,16 @@ app.get('/', (req, res) => {
         .messages { 
             flex: 1; overflow-y: auto; padding: 1rem; padding-bottom: 100px;
             scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;
+            display: flex; flex-direction: column; gap: 0.5rem;
         }
         .messages::-webkit-scrollbar { width: 6px; }
         .messages::-webkit-scrollbar-track { background: transparent; }
         .messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
         .message { 
-            margin: 0.5rem 0; padding: 1rem 1.5rem; border-radius: 18px; 
+            margin: 0; padding: 1rem 1.5rem; border-radius: 18px; 
             max-width: 80%; word-wrap: break-word; line-height: 1.4;
             animation: fadeIn 0.3s ease-in; position: relative;
+            flex-shrink: 0;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .user { 
@@ -173,9 +175,10 @@ app.get('/', (req, res) => {
         .voice-button.speaking { background: rgba(255, 0, 0, 0.3); }
         .message-actions { 
             position: absolute; top: 0.75rem; right: 0.75rem; 
-            display: flex; gap: 0.25rem; opacity: 0; transition: opacity 0.2s ease;
+            display: flex; gap: 0.25rem; opacity: 1; transition: opacity 0.2s ease;
         }
-        .message:hover .message-actions { opacity: 1; }
+        .assistant .message-actions { opacity: 0.7; }
+        .assistant:hover .message-actions { opacity: 1; }
         .copy-btn, .speak-btn { 
             background: rgba(0,0,0,0.8); border: none; color: #fff;
             cursor: pointer; font-size: 0.8rem; padding: 0.25rem; border-radius: 6px;
@@ -304,7 +307,10 @@ app.get('/', (req, res) => {
             }
             
             messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
+            // Auto-scroll to bottom
+            setTimeout(() => {
+                messages.scrollTop = messages.scrollHeight;
+            }, 50);
             
             return div;
         }
@@ -542,6 +548,11 @@ app.get('/', (req, res) => {
             messages.innerHTML = '<div class="message assistant" id="msg_cleared" data-message="Conversation cleared. How can I assist you?"><strong>Valor:</strong> Conversation cleared. How can I assist you?<div class="message-actions"><button class="copy-btn" onclick="copyText(\'msg_cleared\')" title="Copy">📋</button><button class="speak-btn" onclick="speakMessage(\'msg_cleared\')" title="Speak">🔊</button></div></div>';
             toggleMenu();
             
+            // Auto-scroll after clearing
+            setTimeout(() => {
+                messages.scrollTop = messages.scrollHeight;
+            }, 50);
+            
             fetch('/api/conversation/default/clear', { method: 'POST' });
         }
         
@@ -577,8 +588,11 @@ app.get('/', (req, res) => {
             toggleMenu();
         }
         
-        // Initialize dropdown functionality
+        // Initialize app when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Load existing conversation
+            loadConversation();
+            
             // Close dropdown when clicking outside
             document.addEventListener('click', function(event) {
                 const menu = document.querySelector('.nav-menu');
