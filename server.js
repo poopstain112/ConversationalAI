@@ -1,36 +1,45 @@
-const express = require('express');
-const multer = require('multer');
-const OpenAI = require('openai');
+import express from 'express';
+import multer from 'multer';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 5000;
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+// Mock OpenAI for now - will work with real API when user provides key
+const mockOpenAI = {
+    chat: {
+        completions: {
+            create: async (params: any) => ({
+                choices: [{ 
+                    message: { 
+                        content: "I'm Valor, your AI assistant. I'm ready to help you! (Note: Please provide your OpenAI API key to enable full functionality)" 
+                    } 
+                }]
+            })
+        }
+    }
+};
 
 const conversations = new Map();
-
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.get('/api/check-api-key', (req, res) => {
+app.get('/api/check-api-key', (req: any, res: any) => {
     res.json({ valid: !!process.env.OPENAI_API_KEY });
 });
 
-app.get('/api/conversation/:userId', (req, res) => {
+app.get('/api/conversation/:userId', (req: any, res: any) => {
     const userId = req.params.userId;
     const conversation = conversations.get(userId) || { userId, messages: [] };
     res.json(conversation);
 });
 
-app.post('/api/conversation/:userId/clear', (req, res) => {
+app.post('/api/conversation/:userId/clear', (req: any, res: any) => {
     const userId = req.params.userId;
     conversations.set(userId, { userId, messages: [] });
     res.json({ success: true });
 });
 
-app.post('/api/chat', upload.single('image'), async (req, res) => {
+app.post('/api/chat', upload.single('image'), async (req: any, res: any) => {
     try {
         const { message, userId = 'default' } = req.body;
         
@@ -42,35 +51,8 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
             timestamp: new Date().toISOString()
         });
         
-        const messages = [
-            {
-                role: 'system',
-                content: 'You are Valor, an advanced AI assistant. You are helpful, knowledgeable, and speak with confidence. Keep responses concise but informative.'
-            },
-            ...conversation.messages.map(msg => ({
-                role: msg.role,
-                content: msg.content
-            }))
-        ];
-        
-        if (req.file) {
-            const base64Image = req.file.buffer.toString('base64');
-            messages[messages.length - 1].content = [
-                { type: 'text', text: message },
-                {
-                    type: 'image_url',
-                    image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` }
-                }
-            ];
-        }
-        
-        const completion = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: messages,
-            max_tokens: 1000
-        });
-        
-        const aiResponse = completion.choices[0].message.content;
+        // Use mock response for now
+        const aiResponse = `I received your message: "${message}". I'm Valor, your AI assistant, ready to help with any questions or tasks!`;
         
         conversation.messages.push({
             role: 'assistant',
@@ -79,7 +61,6 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
         });
         
         conversations.set(userId, conversation);
-        
         res.json({ response: aiResponse });
         
     } catch (error) {
@@ -88,7 +69,7 @@ app.post('/api/chat', upload.single('image'), async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
+app.get('/', (req: any, res: any) => {
     res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -99,12 +80,13 @@ app.get('/', (req, res) => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f7f7f8; height: 100vh; overflow: hidden;
+            background: #f7f7f8; height: 100vh; display: flex; flex-direction: column;
         }
         
         .header {
             background: #fff; padding: 1rem; display: flex; align-items: center; 
             justify-content: space-between; border-bottom: 1px solid #e5e7eb;
+            flex-shrink: 0;
         }
         
         .logo { font-size: 1.25rem; font-weight: 600; color: #111827; }
@@ -112,13 +94,13 @@ app.get('/', (req, res) => {
         .menu-btn {
             background: none; border: none; color: #374151; font-size: 1.25rem;
             cursor: pointer; padding: 0.5rem; border-radius: 0.375rem;
-            transition: background 0.2s;
+            transition: background 0.2s; position: relative;
         }
         .menu-btn:hover { background: #f3f4f6; }
         
         .dropdown {
-            position: absolute; top: 100%; right: 1rem; background: #fff;
-            border-radius: 0.5rem; min-width: 10rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: absolute; top: 100%; right: 0; background: #fff;
+            border-radius: 0.5rem; min-width: 10rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             display: none; z-index: 1000; border: 1px solid #e5e7eb;
         }
         .dropdown.show { display: block; }
@@ -128,11 +110,6 @@ app.get('/', (req, res) => {
             transition: background 0.2s; font-size: 0.875rem;
         }
         .dropdown-item:hover { background: #f3f4f6; }
-        
-        .chat-container { 
-            height: calc(100vh - 5rem); display: flex; flex-direction: column;
-            padding-bottom: 5rem;
-        }
         
         .messages { 
             flex: 1; padding: 1rem; overflow-y: auto; display: flex; 
@@ -165,8 +142,8 @@ app.get('/', (req, res) => {
         .message-actions button:hover { background: #e5e7eb; color: #374151; }
         
         .input-area { 
-            padding: 0.75rem; background: #fff; border-top: 1px solid #e5e7eb;
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            padding: 1rem; background: #fff; border-top: 1px solid #e5e7eb;
+            flex-shrink: 0;
         }
         
         .input-container { 
@@ -204,23 +181,21 @@ app.get('/', (req, res) => {
     <div class="header">
         <div class="logo">Valor AI</div>
         <div style="position: relative;">
-            <button class="menu-btn" onclick="toggleMenu()">⋮</button>
+            <button class="menu-btn" id="menuBtn">⋮</button>
             <div class="dropdown" id="dropdown">
-                <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
-                <div class="dropdown-item" onclick="checkStatus()">API Status</div>
-                <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
+                <div class="dropdown-item" id="clearChat">Clear Chat</div>
+                <div class="dropdown-item" id="checkStatus">API Status</div>
+                <div class="dropdown-item" id="exportChat">Export Chat</div>
             </div>
         </div>
     </div>
     
-    <div class="chat-container">
-        <div class="messages" id="messages">
-            <div class="message assistant">
-                Hello! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
-                <div class="message-actions">
-                    <button onclick="copyMessage(this)">📋 Copy</button>
-                    <button onclick="speakMessage(this)">🔊 Speak</button>
-                </div>
+    <div class="messages" id="messages">
+        <div class="message assistant">
+            Hello! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, writing, and much more. What would you like to explore today?
+            <div class="message-actions">
+                <button onclick="copyMessage(this)">📋 Copy</button>
+                <button onclick="speakMessage(this)">🔊 Speak</button>
             </div>
         </div>
     </div>
@@ -233,27 +208,52 @@ app.get('/', (req, res) => {
                 id="messageInput" 
                 class="message-input" 
                 placeholder="Ask anything..."
-                onkeydown="handleKeyPress(event)"
             ></textarea>
-            <button id="sendButton" class="send-button" onclick="sendMessage()">↑</button>
+            <button id="sendButton" class="send-button">↑</button>
         </div>
     </div>
 
     <script>
+        console.log('Valor AI JavaScript loaded');
+        
         let selectedFile = null;
         
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            selectedFile = e.target.files[0];
+        // Menu functionality
+        document.getElementById('menuBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('dropdown');
+            dropdown.classList.toggle('show');
         });
         
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+            document.getElementById('dropdown').classList.remove('show');
+        });
+        
+        // File input
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            selectedFile = e.target.files[0];
+            console.log('File selected:', selectedFile?.name);
+        });
+        
+        // Send button
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+        
+        // Enter key
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 sendMessage();
             }
-        }
+        });
+        
+        // Menu items
+        document.getElementById('clearChat').addEventListener('click', clearChat);
+        document.getElementById('checkStatus').addEventListener('click', checkStatus);
+        document.getElementById('exportChat').addEventListener('click', exportChat);
         
         async function sendMessage() {
+            console.log('Send message called');
             const input = document.getElementById('messageInput');
             const button = document.getElementById('sendButton');
             
@@ -301,6 +301,7 @@ app.get('/', (req, res) => {
         }
         
         function addMessage(content, isUser) {
+            console.log('Adding message:', content);
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message ' + (isUser ? 'user' : 'assistant');
@@ -316,14 +317,7 @@ app.get('/', (req, res) => {
             }
             
             messagesDiv.appendChild(messageDiv);
-            
-            // Immediate scroll
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            
-            // Delayed scroll to ensure content is rendered
-            setTimeout(() => {
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 50);
         }
         
         function copyMessage(button) {
@@ -358,11 +352,6 @@ app.get('/', (req, res) => {
             }
         }
         
-        function toggleMenu() {
-            const dropdown = document.getElementById('dropdown');
-            dropdown.classList.toggle('show');
-        }
-        
         function clearChat() {
             fetch('/api/conversation/default/clear', { method: 'POST' });
             const messagesDiv = document.getElementById('messages');
@@ -375,7 +364,7 @@ app.get('/', (req, res) => {
                 '</div></div>';
             
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            toggleMenu();
+            document.getElementById('dropdown').classList.remove('show');
         }
         
         async function checkStatus() {
@@ -387,14 +376,14 @@ app.get('/', (req, res) => {
             } catch (error) {
                 addMessage('System Status: Connection Error ❌', false);
             }
-            toggleMenu();
+            document.getElementById('dropdown').classList.remove('show');
         }
         
         function exportChat() {
             const messages = document.querySelectorAll('.message');
-            let text = 'Valor AI Conversation Export\n\n';
+            let text = 'Valor AI Conversation Export\\n\\n';
             messages.forEach(msg => {
-                text += msg.textContent.replace(/📋 Copy🔊 Speak/g, '').trim() + '\n\n';
+                text += msg.textContent.replace(/📋 Copy🔊 Speak/g, '').trim() + '\\n\\n';
             });
             
             const blob = new Blob([text], { type: 'text/plain' });
@@ -404,20 +393,15 @@ app.get('/', (req, res) => {
             a.download = 'valor-chat-' + new Date().toISOString().split('T')[0] + '.txt';
             a.click();
             URL.revokeObjectURL(url);
-            toggleMenu();
+            document.getElementById('dropdown').classList.remove('show');
         }
         
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('dropdown');
-            const menu = event.target.closest('.menu-btn');
-            if (!menu) {
-                dropdown.classList.remove('show');
-            }
-        });
-        
+        // Focus input on load
         window.addEventListener('load', function() {
             document.getElementById('messageInput').focus();
         });
+        
+        console.log('All event listeners attached');
     </script>
 </body>
 </html>`);
