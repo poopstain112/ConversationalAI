@@ -115,6 +115,72 @@
             background: #51cf66; 
         }
         
+        .camera-mode {
+            background: #ff9500;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 10px;
+            position: absolute;
+            left: 16px;
+            top: 50px;
+            display: none;
+        }
+        .camera-mode.active {
+            display: block;
+        }
+        
+        .camera-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+        }
+        .camera-header {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .camera-preview {
+            flex: 1;
+            width: 100%;
+            object-fit: cover;
+        }
+        .camera-controls {
+            background: rgba(0,0,0,0.8);
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+        .camera-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .camera-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .capture-btn {
+            background: #ff3b30;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+        }
+        
         .typing-indicator {
             display: none;
             max-width: 80%;
@@ -140,16 +206,23 @@
         .message-wrapper.assistant {
             justify-content: flex-start;
         }
+        
+        .image-message {
+            max-width: 200px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="continuous-mode" id="continuousIndicator">Continuous: OFF</div>
+        <div class="camera-mode" id="cameraIndicator">CAMERA: ON</div>
         <h1>Valor AI</h1>
         <button class="menu-btn" onclick="toggleMenu()">⋯</button>
         <div class="dropdown" id="dropdown">
             <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
-            <div class="dropdown-item" onclick="openCamera()">📷 Camera</div>
+            <div class="dropdown-item" onclick="toggleCamera()">📷 Camera Vision</div>
             <div class="dropdown-item" onclick="connectBluetooth()">🔵 Bluetooth</div>
             <div class="dropdown-item" onclick="toggleVoice()">🎤 Voice Mode</div>
             <div class="dropdown-item" onclick="openGcode()">⚙️ G-Code Generator</div>
@@ -169,12 +242,31 @@
             <button class="send-btn" id="sendBtn" onclick="sendMessage()">→</button>
         </div>
     </div>
+    
+    <!-- Camera Overlay -->
+    <div class="camera-overlay" id="cameraOverlay">
+        <div class="camera-header">
+            <span>Valor Vision Active</span>
+            <button class="camera-btn" onclick="closeCameraOverlay()">Close</button>
+        </div>
+        <video class="camera-preview" id="cameraPreview" autoplay playsinline></video>
+        <div class="camera-controls">
+            <button class="camera-btn" onclick="switchCamera()">Switch</button>
+            <button class="camera-btn capture-btn" id="captureBtn" onclick="captureAndAnalyze()">📷</button>
+            <button class="camera-btn" onclick="toggleCameraMode()">Toggle</button>
+        </div>
+    </div>
+    
+    <canvas id="captureCanvas" style="display: none;"></canvas>
 
     <script>
         console.log('Valor AI JavaScript loaded');
         
         let continuousMode = false;
         let continuousInterval = null;
+        let cameraMode = false;
+        let cameraStream = null;
+        let facingMode = 'environment'; // Start with back camera
         
         // Chat persistence functions
         function saveChatHistory() {
@@ -204,7 +296,7 @@
                     container.innerHTML = '';
                     
                     messages.forEach(msg => {
-                        addMessage(msg.content, msg.role, false); // false = don't save to storage
+                        addMessage(msg.content, msg.role, false);
                     });
                     
                     if (messages.length === 0) {
@@ -219,10 +311,159 @@
             }
         }
         
-        // Initialize chat with welcome message
         function initializeChat() {
-            const welcomeMessage = "Hello Commander! I'm Valor, your advanced AI assistant. I can help you with questions, analysis, creative writing, G-code generation, and much more. What would you like to explore today?";
+            const welcomeMessage = "Hello Commander! I'm Valor, your advanced AI assistant with vision capabilities. I can help you with questions, analysis, creative writing, G-code generation, and visual analysis. What would you like to explore today?";
             addMessage(welcomeMessage, 'assistant');
+        }
+        
+        // Camera functions
+        function toggleCamera() {
+            cameraMode = !cameraMode;
+            const indicator = document.getElementById('cameraIndicator');
+            
+            if (cameraMode) {
+                indicator.classList.add('active');
+                startCameraMode();
+            } else {
+                indicator.classList.remove('active');
+                stopCameraMode();
+            }
+            toggleMenu();
+        }
+        
+        async function startCameraMode() {
+            try {
+                const overlay = document.getElementById('cameraOverlay');
+                overlay.style.display = 'flex';
+                
+                await startCamera();
+                
+                addMessage("Camera vision activated. I can now see through your camera. Point it at anything you want me to analyze!", 'assistant');
+            } catch (error) {
+                alert('Camera access denied. Please allow camera permissions in your browser settings.');
+                cameraMode = false;
+                document.getElementById('cameraIndicator').classList.remove('active');
+            }
+        }
+        
+        function stopCameraMode() {
+            const overlay = document.getElementById('cameraOverlay');
+            overlay.style.display = 'none';
+            
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            
+            addMessage("Camera vision deactivated.", 'assistant');
+        }
+        
+        async function startCamera() {
+            const constraints = {
+                video: {
+                    facingMode: facingMode,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            
+            cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+            const video = document.getElementById('cameraPreview');
+            video.srcObject = cameraStream;
+        }
+        
+        async function switchCamera() {
+            facingMode = facingMode === 'environment' ? 'user' : 'environment';
+            
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+            
+            await startCamera();
+        }
+        
+        function toggleCameraMode() {
+            toggleCamera();
+        }
+        
+        function closeCameraOverlay() {
+            stopCameraMode();
+            cameraMode = false;
+            document.getElementById('cameraIndicator').classList.remove('active');
+        }
+        
+        async function captureAndAnalyze() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.getElementById('captureCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            const base64Image = imageData.split(',')[1];
+            
+            // Show captured image in chat
+            addImageMessage(imageData, 'user');
+            addMessage("Analyze this image", 'user');
+            
+            // Send for analysis
+            await analyzeImage(base64Image);
+        }
+        
+        async function analyzeImage(base64Image) {
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/analyze-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image })
+                });
+                
+                const data = await response.json();
+                
+                hideTypingIndicator();
+                addMessage(data.analysis, 'assistant');
+                
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('Sorry, I encountered an error analyzing the image. Please try again.', 'assistant');
+            }
+        }
+        
+        function addImageMessage(imageSrc, role) {
+            const container = document.getElementById('chatContainer');
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${role}`;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.className = 'image-message';
+            
+            messageDiv.appendChild(img);
+            wrapper.appendChild(messageDiv);
+            container.appendChild(wrapper);
+            
+            scrollToBottom();
+        }
+        
+        // Voice command processing
+        function processVoiceCommand(command) {
+            const lowerCommand = command.toLowerCase();
+            
+            if (lowerCommand.includes('camera on') || lowerCommand.includes('enable camera')) {
+                if (!cameraMode) toggleCamera();
+            } else if (lowerCommand.includes('camera off') || lowerCommand.includes('disable camera')) {
+                if (cameraMode) toggleCamera();
+            } else if (lowerCommand.includes('capture') || lowerCommand.includes('analyze')) {
+                if (cameraMode) captureAndAnalyze();
+            }
         }
         
         // Auto-resize textarea
@@ -252,11 +493,6 @@
             container.innerHTML = '';
             localStorage.removeItem('valorChatHistory');
             addMessage("Chat cleared. How can I help you?", 'assistant');
-            toggleMenu();
-        }
-        
-        function openCamera() {
-            alert('Camera access will be implemented in the next update!');
             toggleMenu();
         }
         
@@ -317,7 +553,7 @@
         }
         
         function checkAPI() {
-            alert('API Status: Connected to OpenAI GPT-4o');
+            alert('API Status: Connected to OpenAI GPT-4o with vision capabilities');
             toggleMenu();
         }
         
@@ -342,22 +578,21 @@
             
             if (!message) return;
             
-            // Add user message immediately
+            // Check for voice commands
+            processVoiceCommand(message);
+            
             addMessage(message, 'user');
             input.value = '';
             input.style.height = 'auto';
             
-            // Send to AI
             sendAIMessage(message);
         }
         
         async function sendAIMessage(message) {
             const sendBtn = document.getElementById('sendBtn');
             
-            // Show typing indicator
             showTypingIndicator();
             
-            // Disable send button
             sendBtn.disabled = true;
             sendBtn.textContent = '...';
             
@@ -377,10 +612,8 @@
                 
                 const data = await response.json();
                 
-                // Hide typing indicator
                 hideTypingIndicator();
                 
-                // Add AI response
                 if (data.response) {
                     addMessage(data.response, 'assistant');
                 } else {
@@ -393,7 +626,6 @@
                 addMessage('Sorry, I encountered an error connecting to my AI systems. Please try again.', 'assistant');
             }
             
-            // Re-enable send button
             sendBtn.disabled = false;
             sendBtn.textContent = '→';
         }
@@ -401,36 +633,29 @@
         function addMessage(text, role, saveToStorage = true) {
             const container = document.getElementById('chatContainer');
             
-            // Create wrapper div
             const wrapper = document.createElement('div');
             wrapper.className = `message-wrapper ${role}`;
             
-            // Create message element
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
             messageDiv.textContent = text;
             
-            // Add to wrapper and container
             wrapper.appendChild(messageDiv);
             container.appendChild(wrapper);
             
-            // Save to localStorage
             if (saveToStorage) {
                 saveChatHistory();
             }
             
-            // Auto-scroll to bottom
             scrollToBottom();
         }
         
         function showTypingIndicator() {
             const container = document.getElementById('chatContainer');
             
-            // Remove existing typing indicator
             const existing = document.querySelector('.typing-indicator');
             if (existing) existing.remove();
             
-            // Create new typing indicator
             const wrapper = document.createElement('div');
             wrapper.className = 'message-wrapper assistant';
             
@@ -473,7 +698,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupTextarea();
             loadChatHistory();
-            console.log('Valor AI initialized successfully');
+            console.log('Valor AI with camera vision initialized successfully');
         });
         
         console.log('All event listeners attached');
