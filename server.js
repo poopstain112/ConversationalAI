@@ -119,163 +119,163 @@ app.get('/', (req, res) => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a; color: #fff; height: 100vh; overflow: hidden;
+            background: #f7f7f8; color: #000; height: 100vh; overflow: hidden;
         }
         
         .header {
-            background: #1c1c1e; padding: 0.8rem 1rem;
+            background: #fff; padding: 1rem;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #333; position: relative; z-index: 100;
+            border-bottom: 1px solid #e5e5e7; position: relative; z-index: 100;
         }
         
-        .header-info {
+        .header-left {
             display: flex; align-items: center; gap: 0.8rem;
         }
         
-        .avatar {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: linear-gradient(135deg, #007AFF, #5856D6);
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 1.1rem; color: #fff;
+        .menu-icon {
+            font-size: 1.4rem; color: #000; cursor: pointer;
         }
         
-        .contact-info h3 {
-            font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 2px;
+        .logo {
+            font-size: 1.3rem; font-weight: 600; color: #000;
         }
         
-        .contact-info p {
-            font-size: 0.85rem; color: #8e8e93;
+        .header-right {
+            display: flex; align-items: center; gap: 1rem;
         }
+        
+        .new-chat-btn {
+            background: none; border: none; color: #000; font-size: 1.2rem;
+            cursor: pointer; padding: 0.5rem; border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+        .new-chat-btn:hover { background: #f0f0f0; }
         
         .nav-menu { position: relative; }
         .menu-button { 
-            background: none; border: none; color: #007AFF; 
+            background: none; border: none; color: #000; 
             font-size: 1.3rem; cursor: pointer; width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 20px; transition: background 0.2s ease;
+            border-radius: 8px; transition: background 0.2s ease;
         }
-        .menu-button:hover { background: rgba(0,122,255,0.1); }
+        .menu-button:hover { background: #f0f0f0; }
         
         .dropdown { 
             position: absolute; top: calc(100% + 0.5rem); right: 0; 
-            background: #2c2c2e; border-radius: 12px; min-width: 180px; 
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5); display: none; z-index: 2000; overflow: hidden;
+            background: #fff; border-radius: 12px; min-width: 180px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: none; z-index: 2000; 
+            overflow: hidden; border: 1px solid #e5e5e7;
         }
         .dropdown.show { display: block; animation: fadeIn 0.2s ease; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
         .dropdown-item { 
-            padding: 12px 16px; color: #fff; cursor: pointer; 
+            padding: 12px 16px; color: #000; cursor: pointer; 
             transition: background 0.2s ease; font-size: 0.95rem;
         }
-        .dropdown-item:hover { background: #3a3a3c; }
+        .dropdown-item:hover { background: #f0f0f0; }
         
         .chat-container { 
-            height: calc(100vh - 140px); display: flex; flex-direction: column;
-            background: #000;
+            height: calc(100vh - 150px); display: flex; flex-direction: column;
+            background: #f7f7f8;
         }
         
         .messages { 
-            flex: 1; padding: 8px 16px; overflow-y: auto; display: flex; 
-            flex-direction: column; gap: 2px;
+            flex: 1; padding: 1rem; overflow-y: auto; display: flex; 
+            flex-direction: column; gap: 1rem; max-width: 800px; margin: 0 auto; width: 100%;
         }
         
         .message { 
-            max-width: 75%; padding: 12px 16px; border-radius: 18px; position: relative;
-            word-wrap: break-word; line-height: 1.4; margin-bottom: 2px;
-            font-size: 0.95rem;
+            padding: 1rem 1.5rem; border-radius: 12px; position: relative;
+            word-wrap: break-word; line-height: 1.6; font-size: 1rem;
         }
         
         .message.user { 
-            align-self: flex-end; background: #007AFF; color: #fff;
-            border-bottom-right-radius: 4px; margin-left: 25%;
+            align-self: flex-end; background: #e7e7e9; color: #000;
+            max-width: 70%; margin-left: auto;
         }
         
         .message.assistant { 
-            align-self: flex-start; background: #1c1c1e; color: #fff;
-            border-bottom-left-radius: 4px; margin-right: 25%;
+            align-self: flex-start; background: #fff; color: #000;
+            max-width: 85%; border: 1px solid #e5e5e7;
         }
         
         .message-actions {
-            display: flex; gap: 8px; margin-top: 8px; opacity: 0.8;
+            display: flex; gap: 0.5rem; margin-top: 1rem; opacity: 0.7;
+            justify-content: flex-start;
         }
         
         .message-actions button {
-            background: rgba(0,122,255,0.15); border: none; color: #007AFF;
-            padding: 6px 12px; border-radius: 12px; cursor: pointer;
-            font-size: 0.8rem; transition: all 0.2s ease; font-weight: 500;
+            background: #f0f0f0; border: none; color: #666;
+            padding: 0.5rem; border-radius: 8px; cursor: pointer;
+            font-size: 0.9rem; transition: all 0.2s ease; display: flex;
+            align-items: center; gap: 0.3rem;
         }
         
         .message-actions button:hover {
-            background: rgba(0,122,255,0.25); transform: scale(1.05);
+            background: #e0e0e0; color: #000;
         }
         
         .input-area { 
-            padding: 8px 16px; background: #1c1c1e;
-            border-top: 1px solid #333; position: relative; z-index: 50;
+            padding: 1rem; background: #f7f7f8; position: relative; z-index: 50;
         }
         
         .input-container { 
-            display: flex; gap: 8px; align-items: flex-end;
-            background: #2c2c2e; border-radius: 20px; padding: 8px;
+            display: flex; gap: 0.5rem; align-items: flex-end;
+            background: #fff; border-radius: 24px; padding: 0.5rem;
+            border: 1px solid #e5e5e7; max-width: 800px; margin: 0 auto;
         }
         
         .file-upload { 
-            background: #007AFF; border: none; color: #fff; border-radius: 50%;
-            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s ease; font-size: 1rem; flex-shrink: 0;
+            background: #f0f0f0; border: none; color: #666; border-radius: 50%;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease; font-size: 1.1rem; flex-shrink: 0;
         }
-        .file-upload:hover { background: #0056CC; }
+        .file-upload:hover { background: #e0e0e0; }
         
         .message-input { 
             flex: 1; background: transparent; border: none;
-            color: #fff; padding: 8px 12px; border-radius: 16px; outline: none;
-            resize: none; min-height: 32px; max-height: 120px; font-size: 0.95rem;
+            color: #000; padding: 0.75rem 1rem; border-radius: 20px; outline: none;
+            resize: none; min-height: 40px; max-height: 120px; font-size: 1rem;
             line-height: 1.4;
         }
-        .message-input::placeholder { color: #8e8e93; }
+        .message-input::placeholder { color: #999; }
         
         .send-button { 
-            background: #007AFF; border: none; color: #fff; 
-            width: 32px; height: 32px; border-radius: 50%; cursor: pointer; 
+            background: #000; border: none; color: #fff; 
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer; 
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease; flex-shrink: 0; font-size: 0.9rem;
+            transition: all 0.2s ease; flex-shrink: 0; font-size: 1rem;
         }
-        .send-button:hover { background: #0056CC; }
-        .send-button:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .timestamp {
-            font-size: 0.75rem; color: #8e8e93; margin-top: 4px; text-align: right;
-        }
-        
-        .message.assistant .timestamp {
-            text-align: left;
-        }
+        .send-button:hover { background: #333; }
+        .send-button:disabled { opacity: 0.5; cursor: not-allowed; background: #ccc; }
         
         @media (max-width: 768px) {
-            .message { max-width: 85%; font-size: 0.9rem; }
-            .header { padding: 0.6rem 1rem; }
-            .input-area { padding: 6px 12px; }
+            .messages { padding: 0.5rem; }
+            .message { font-size: 0.95rem; padding: 1rem; }
+            .header { padding: 0.8rem 1rem; }
+            .input-area { padding: 0.5rem; }
+            .input-container { margin: 0 0.5rem; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="header-info">
-            <div class="avatar">V</div>
-            <div class="contact-info">
-                <h3>Valor AI</h3>
-                <p>Online • AI Assistant</p>
-            </div>
+        <div class="header-left">
+            <div class="menu-icon">☰</div>
+            <div class="logo">Valor AI</div>
         </div>
-        <div class="nav-menu">
-            <button class="menu-button" onclick="toggleDropdown()">⋮</button>
-            <div class="dropdown" id="dropdown">
-                <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
-                <div class="dropdown-item" onclick="checkStatus()">API Status</div>
-                <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
-                <div class="dropdown-item" onclick="showAbout()">About Valor</div>
+        <div class="header-right">
+            <button class="new-chat-btn" onclick="clearChat()" title="New Chat">✏️</button>
+            <div class="nav-menu">
+                <button class="menu-button" onclick="toggleDropdown()">⋮</button>
+                <div class="dropdown" id="dropdown">
+                    <div class="dropdown-item" onclick="clearChat()">Clear Chat</div>
+                    <div class="dropdown-item" onclick="checkStatus()">API Status</div>
+                    <div class="dropdown-item" onclick="exportChat()">Export Chat</div>
+                    <div class="dropdown-item" onclick="showAbout()">About Valor</div>
+                </div>
             </div>
         </div>
     </div>
@@ -299,7 +299,7 @@ app.get('/', (req, res) => {
             <textarea 
                 id="messageInput" 
                 class="message-input" 
-                placeholder="Message..."
+                placeholder="Ask anything..."
                 onkeydown="handleKeyPress(event)"
             ></textarea>
             <button id="sendButton" class="send-button" onclick="sendMessage()">↑</button>
