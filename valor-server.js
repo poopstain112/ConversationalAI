@@ -88,9 +88,9 @@ app.get('/', (req, res) => {
             border-radius: 12px; min-width: 180px; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.6);
             backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15);
-            display: none; z-index: 2000; overflow: hidden;
+            display: none !important; z-index: 2000; overflow: hidden;
         }
-        .dropdown.show { display: block; animation: dropdownShow 0.2s ease-out; }
+        .dropdown.show { display: block !important; animation: dropdownShow 0.2s ease-out; }
         @keyframes dropdownShow { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .dropdown-item { 
             padding: 0.9rem 1.2rem; color: #fff; 
@@ -402,8 +402,12 @@ app.get('/', (req, res) => {
             console.log('Toggle menu clicked');
             const dropdown = document.getElementById('menuDropdown');
             if (dropdown) {
-                dropdown.classList.toggle('show');
-                console.log('Dropdown classes:', dropdown.className);
+                if (dropdown.style.display === 'block') {
+                    dropdown.style.display = 'none';
+                } else {
+                    dropdown.style.display = 'block';
+                }
+                console.log('Dropdown display:', dropdown.style.display);
             } else {
                 console.error('Dropdown not found');
             }
@@ -627,9 +631,26 @@ app.get('/', (req, res) => {
         }
         
         // Initialize app when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('load', function() {
+            console.log('Page loaded, initializing Valor...');
+            
+            // Ensure initial message is visible
+            const messagesContainer = document.getElementById('messages');
+            if (messagesContainer) {
+                console.log('Messages container found');
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } else {
+                console.error('Messages container not found');
+            }
+            
             // Load existing conversation
             loadConversation();
+            
+            // Focus input
+            const input = document.getElementById('messageInput');
+            if (input) {
+                input.focus();
+            }
             
             // Close dropdown when clicking outside
             document.addEventListener('click', function(event) {
