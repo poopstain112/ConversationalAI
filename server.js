@@ -130,7 +130,8 @@ app.get('/', (req, res) => {
         .dropdown-item:hover { background: #f3f4f6; }
         
         .chat-container { 
-            height: calc(100vh - 10rem); display: flex; flex-direction: column;
+            height: calc(100vh - 5rem); display: flex; flex-direction: column;
+            padding-bottom: 5rem;
         }
         
         .messages { 
@@ -164,7 +165,8 @@ app.get('/', (req, res) => {
         .message-actions button:hover { background: #e5e7eb; color: #374151; }
         
         .input-area { 
-            padding: 1rem; background: #fff; border-top: 1px solid #e5e7eb;
+            padding: 0.75rem; background: #fff; border-top: 1px solid #e5e7eb;
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
         }
         
         .input-container { 
@@ -314,7 +316,14 @@ app.get('/', (req, res) => {
             }
             
             messagesDiv.appendChild(messageDiv);
+            
+            // Immediate scroll
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Delayed scroll to ensure content is rendered
+            setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 50);
         }
         
         function copyMessage(button) {
